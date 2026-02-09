@@ -1,0 +1,104 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { childName, ageGroup, theme, specialMessage } = await req.json();
+
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY is not configured");
+    }
+
+    const themeDescriptions: Record<string, string> = {
+      animais: "animais fofinhos como coelhos, ursos, passarinhos",
+      princesas: "princesas, castelos encantados, magia e bondade",
+      "super-herois": "super-heróis, poderes especiais, coragem e aventura",
+      espaco: "espaço sideral, foguetes, estrelas, planetas e aventura cósmica",
+      natureza: "natureza, flores, borboletas, arco-íris e jardins encantados",
+    };
+
+    const themeDesc = themeDescriptions[theme] || themeDescriptions.animais;
+
+    const systemPrompt = `Você é um compositor de músicas infantis em português brasileiro. Crie letras alegres, rimadas e fáceis de cantar para crianças.
+
+Regras:
+- A letra DEVE incluir o nome "${childName}" pelo menos 3 vezes
+- Use linguagem simples e adequada para crianças de ${ageGroup} anos
+- O tema deve ser sobre: ${themeDesc}
+- Crie 2 estrofes + 1 refrão que se repete
+- Cada estrofe deve ter 4 linhas
+- O refrão deve ter 4 linhas e ser bem cativante
+- Use rimas AABB ou ABAB
+- A letra deve ter entre 16 e 24 linhas no total
+- NÃO use emojis na letra
+- NÃO inclua títulos ou marcações como "Estrofe 1" ou "Refrão"
+- Retorne APENAS o texto da letra, sem explicações
+${specialMessage ? `- Incorpore naturalmente esta mensagem especial: "${specialMessage}"` : ""}`;
+
+    const response = await fetch(
+      "https://ai.gateway.lovable.dev/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: systemPrompt },
+            {
+              role: "user",
+              content: `Crie uma música infantil personalizada para ${childName}, uma criança de ${ageGroup} anos que adora ${themeDesc}.`,
+            },
+          ],
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "Muitas requisições. Tente novamente em alguns segundos." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "Créditos insuficientes. Entre em contato com o suporte." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      const errorText = await response.text();
+      console.error("AI gateway error:", response.status, errorText);
+      throw new Error(`AI gateway error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const lyrics = data.choices?.[0]?.message?.content?.trim();
+
+    if (!lyrics) {
+      throw new Error("No lyrics generated");
+    }
+
+    return new Response(JSON.stringify({ lyrics }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (e) {
+    console.error("generate-lyrics error:", e);
+    return new Response(
+      JSON.stringify({ error: e instanceof Error ? e.message : "Erro ao gerar letra" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});
