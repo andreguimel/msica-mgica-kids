@@ -7,62 +7,91 @@ const headers = {
   Authorization: `Bearer ${SUPABASE_KEY}`,
 };
 
-interface GenerateLyricsParams {
+interface GenerateSongParams {
   childName: string;
   ageGroup: string;
   theme: string;
   specialMessage: string;
 }
 
-export async function generateLyrics(params: GenerateLyricsParams): Promise<string> {
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-lyrics`, {
+interface StartSongResult {
+  taskId: string;
+  lyrics: string;
+}
+
+interface TaskStatus {
+  status: "processing" | "completed" | "failed";
+  audio_url: string | null;
+  lyrics: string | null;
+  error_message: string | null;
+}
+
+export async function startSongGeneration(params: GenerateSongParams): Promise<StartSongResult> {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-song`, {
     method: "POST",
     headers,
     body: JSON.stringify(params),
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: "Erro ao gerar letra" }));
+    const error = await response.json().catch(() => ({ error: "Erro ao gerar música" }));
     throw new Error(error.error || `Erro ${response.status}`);
   }
 
   const data = await response.json();
-  return data.lyrics;
+  return { taskId: data.taskId, lyrics: data.lyrics };
 }
 
-export async function generateTTS(text: string): Promise<string> {
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-tts`, {
+export async function checkTaskStatus(taskId: string): Promise<TaskStatus> {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/check-task`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ taskId }),
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: "Erro ao gerar voz" }));
+    const error = await response.json().catch(() => ({ error: "Erro ao verificar status" }));
     throw new Error(error.error || `Erro ${response.status}`);
   }
 
-  const blob = await response.blob();
-  return URL.createObjectURL(blob);
+  return response.json();
 }
 
-export async function generateMusic(theme: string, ageGroup: string): Promise<string | null> {
-  try {
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-music`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ theme, ageGroup }),
-    });
+export function pollTaskStatus(
+  taskId: string,
+  onUpdate: (status: TaskStatus) => void,
+  onError: (error: Error) => void,
+  intervalMs = 5000,
+  timeoutMs = 180000
+): () => void {
+  const startTime = Date.now();
+  let stopped = false;
 
-    if (!response.ok) {
-      console.warn("Music generation unavailable:", response.status);
-      return null;
+  const poll = async () => {
+    if (stopped) return;
+
+    if (Date.now() - startTime > timeoutMs) {
+      onError(new Error("Tempo limite excedido. A geração está demorando mais que o esperado."));
+      return;
     }
 
-    const blob = await response.blob();
-    return URL.createObjectURL(blob);
-  } catch (e) {
-    console.warn("Music generation failed:", e);
-    return null;
-  }
+    try {
+      const status = await checkTaskStatus(taskId);
+      onUpdate(status);
+
+      if (status.status === "processing") {
+        setTimeout(poll, intervalMs);
+      }
+    } catch (e) {
+      if (!stopped) {
+        onError(e instanceof Error ? e : new Error("Erro ao verificar status"));
+      }
+    }
+  };
+
+  poll();
+
+  return () => {
+    stopped = true;
+  };
 }

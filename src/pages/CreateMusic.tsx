@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -22,7 +22,7 @@ import {
 import { MagicButton } from "@/components/ui/MagicButton";
 import { FloatingElements } from "@/components/ui/FloatingElements";
 import { useToast } from "@/hooks/use-toast";
-import { generateLyrics, generateTTS, generateMusic } from "@/services/musicPipeline";
+import { startSongGeneration, pollTaskStatus } from "@/services/musicPipeline";
 
 const themes = [
   { value: "animais", label: "🐻 Animais", emoji: "🐻" },
@@ -50,6 +50,7 @@ export default function CreateMusic() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState("");
+  const [stopPolling, setStopPolling] = useState<(() => void) | null>(null);
   const [formData, setFormData] = useState<FormData>({
     childName: "",
     ageGroup: "",
@@ -57,64 +58,73 @@ export default function CreateMusic() {
     specialMessage: "",
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      stopPolling?.();
+    };
+  }, [stopPolling]);
+
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.childName.trim()) {
-      toast({
-        title: "Opa! 🎵",
-        description: "Digite o nome da criança para continuar",
-        variant: "destructive",
-      });
+      toast({ title: "Opa! 🎵", description: "Digite o nome da criança para continuar", variant: "destructive" });
       return;
     }
-
     if (!formData.ageGroup) {
-      toast({
-        title: "Opa! 🎵",
-        description: "Selecione a faixa etária",
-        variant: "destructive",
-      });
+      toast({ title: "Opa! 🎵", description: "Selecione a faixa etária", variant: "destructive" });
       return;
     }
-
     if (!formData.theme) {
-      toast({
-        title: "Opa! 🎵",
-        description: "Escolha um tema favorito",
-        variant: "destructive",
-      });
+      toast({ title: "Opa! 🎵", description: "Escolha um tema favorito", variant: "destructive" });
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // Step 1: Generate lyrics
+      // Step 1: Generate lyrics + send to Kie.ai
       setLoadingStep("✨ Gerando letra personalizada...");
-      const lyrics = await generateLyrics(formData);
+      const { taskId, lyrics } = await startSongGeneration(formData);
 
-      // Step 2: Generate TTS voice
-      setLoadingStep("🎤 Criando a voz cantada...");
-      const ttsUrl = await generateTTS(lyrics);
+      // Step 2: Poll for completion
+      setLoadingStep("🎵 Compondo sua música... isso pode levar até 2 minutos");
 
-      // Step 3: Generate instrumental music
-      setLoadingStep("🎵 Compondo a música instrumental...");
-      const musicUrl = await generateMusic(formData.theme, formData.ageGroup);
-
-      // Store results for Preview page
-      localStorage.setItem(
-        "musicResult",
-        JSON.stringify({
-          formData,
-          lyrics,
-          ttsUrl,
-          musicUrl,
-        })
+      const stop = pollTaskStatus(
+        taskId,
+        (status) => {
+          if (status.status === "completed" && status.audio_url) {
+            setIsLoading(false);
+            localStorage.setItem(
+              "musicResult",
+              JSON.stringify({
+                formData,
+                lyrics,
+                audioUrl: status.audio_url,
+              })
+            );
+            navigate("/preview");
+          } else if (status.status === "failed") {
+            setIsLoading(false);
+            toast({
+              title: "Erro na geração 😔",
+              description: status.error_message || "A geração da música falhou. Tente novamente.",
+              variant: "destructive",
+            });
+          }
+        },
+        (error) => {
+          setIsLoading(false);
+          toast({
+            title: "Erro na geração 😔",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
       );
 
-      setIsLoading(false);
-      navigate("/preview");
+      setStopPolling(() => stop);
     } catch (error) {
       setIsLoading(false);
       toast({
@@ -123,7 +133,7 @@ export default function CreateMusic() {
         variant: "destructive",
       });
     }
-  };
+  }, [formData, navigate, toast]);
 
   return (
     <div className="min-h-screen bg-background stars-bg relative overflow-hidden">
@@ -165,9 +175,7 @@ export default function CreateMusic() {
                   <Input
                     placeholder="Ex: Joãozinho"
                     value={formData.childName}
-                    onChange={(e) =>
-                      setFormData({ ...formData, childName: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, childName: e.target.value })}
                     className="h-12 rounded-xl border-2 border-border focus:border-primary transition-colors"
                     maxLength={30}
                   />
@@ -184,9 +192,7 @@ export default function CreateMusic() {
                   </label>
                   <Select
                     value={formData.ageGroup}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, ageGroup: value })
-                    }
+                    onValueChange={(value) => setFormData({ ...formData, ageGroup: value })}
                   >
                     <SelectTrigger className="h-12 rounded-xl border-2 border-border focus:border-primary">
                       <SelectValue placeholder="Selecione a idade" />
@@ -212,9 +218,7 @@ export default function CreateMusic() {
                       <motion.button
                         key={theme.value}
                         type="button"
-                        onClick={() =>
-                          setFormData({ ...formData, theme: theme.value })
-                        }
+                        onClick={() => setFormData({ ...formData, theme: theme.value })}
                         className={`p-4 rounded-xl border-2 transition-all ${
                           formData.theme === theme.value
                             ? "border-primary bg-primary/10 shadow-pink"
@@ -241,9 +245,7 @@ export default function CreateMusic() {
                   <Textarea
                     placeholder="Ex: Feliz aniversário! Você é muito especial..."
                     value={formData.specialMessage}
-                    onChange={(e) =>
-                      setFormData({ ...formData, specialMessage: e.target.value })
-                    }
+                    onChange={(e) => setFormData({ ...formData, specialMessage: e.target.value })}
                     className="rounded-xl border-2 border-border focus:border-primary resize-none"
                     rows={3}
                     maxLength={100}
@@ -277,9 +279,7 @@ export default function CreateMusic() {
             {/* Card de preview */}
             <div className="card-float text-center">
               <div className="text-6xl mb-4">🎵</div>
-              <h3 className="text-xl font-baloo font-bold mb-2">
-                Prévia ao vivo
-              </h3>
+              <h3 className="text-xl font-baloo font-bold mb-2">Prévia ao vivo</h3>
               <AnimatePresence mode="wait">
                 {formData.childName ? (
                   <motion.div
@@ -289,26 +289,18 @@ export default function CreateMusic() {
                     exit={{ opacity: 0 }}
                     className="bg-muted/50 rounded-2xl p-4 mt-4"
                   >
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Sua música será sobre:
-                    </p>
+                    <p className="text-sm text-muted-foreground mb-2">Sua música será sobre:</p>
                     <p className="font-baloo font-bold text-lg text-gradient">
                       "{formData.childName}"
                     </p>
                     {formData.theme && (
                       <p className="text-sm mt-2">
-                        Tema:{" "}
-                        <span className="font-semibold">
-                          {themes.find((t) => t.value === formData.theme)?.label}
-                        </span>
+                        Tema: <span className="font-semibold">{themes.find((t) => t.value === formData.theme)?.label}</span>
                       </p>
                     )}
                     {formData.ageGroup && (
                       <p className="text-sm">
-                        Idade:{" "}
-                        <span className="font-semibold">
-                          {ageGroups.find((a) => a.value === formData.ageGroup)?.label}
-                        </span>
+                        Idade: <span className="font-semibold">{ageGroups.find((a) => a.value === formData.ageGroup)?.label}</span>
                       </p>
                     )}
                   </motion.div>
@@ -333,7 +325,7 @@ export default function CreateMusic() {
               </h3>
               <ul className="space-y-3">
                 {[
-                  "🎵 Música de 1-2 minutos com o nome da criança",
+                  "🎵 Música completa cantada com o nome da criança",
                   "🎬 Vídeo animado em HD com a letra",
                   "📄 PDF com a letra completa para imprimir",
                   "⬇️ Download instantâneo após pagamento",
@@ -354,12 +346,8 @@ export default function CreateMusic() {
             {/* Preço */}
             <div className="card-float bg-gradient-to-br from-primary/10 to-lavender/10 text-center">
               <p className="text-sm text-muted-foreground mb-1">Apenas</p>
-              <p className="text-4xl font-baloo font-extrabold text-gradient">
-                R$ 29,90
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Pagamento único via Pix
-              </p>
+              <p className="text-4xl font-baloo font-extrabold text-gradient">R$ 29,90</p>
+              <p className="text-sm text-muted-foreground mt-1">Pagamento único via Pix</p>
             </div>
           </motion.div>
         </div>
@@ -399,12 +387,15 @@ export default function CreateMusic() {
                   {loadingStep || "✨ Preparando..."}
                 </motion.span>
               </div>
+              <p className="text-xs text-muted-foreground mt-3">
+                Isso pode levar até 2 minutos
+              </p>
               <div className="mt-4 h-2 bg-muted rounded-full overflow-hidden">
                 <motion.div
                   className="h-full bg-gradient-rainbow"
                   initial={{ width: "0%" }}
                   animate={{ width: "100%" }}
-                  transition={{ duration: 3, ease: "easeInOut" }}
+                  transition={{ duration: 120, ease: "linear" }}
                 />
               </div>
             </motion.div>
