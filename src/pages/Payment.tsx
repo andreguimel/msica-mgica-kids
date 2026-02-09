@@ -81,7 +81,7 @@ export default function Payment() {
   if (!musicData) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-sky stars-bg relative overflow-hidden">
+    <div className="min-h-screen bg-background stars-bg relative overflow-hidden">
       <FloatingElements />
 
       <div className="container-rounded py-8 relative z-10">
