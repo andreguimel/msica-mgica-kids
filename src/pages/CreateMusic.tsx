@@ -22,6 +22,7 @@ import {
 import { MagicButton } from "@/components/ui/MagicButton";
 import { FloatingElements } from "@/components/ui/FloatingElements";
 import { useToast } from "@/hooks/use-toast";
+import { generateLyrics, generateTTS, generateMusic } from "@/services/musicPipeline";
 
 const themes = [
   { value: "animais", label: "🐻 Animais", emoji: "🐻" },
@@ -48,6 +49,7 @@ export default function CreateMusic() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState("");
   const [formData, setFormData] = useState<FormData>({
     childName: "",
     ageGroup: "",
@@ -87,14 +89,40 @@ export default function CreateMusic() {
 
     setIsLoading(true);
 
-    // Simular geração (em produção, chamaria as APIs de IA)
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    try {
+      // Step 1: Generate lyrics
+      setLoadingStep("✨ Gerando letra personalizada...");
+      const lyrics = await generateLyrics(formData);
 
-    // Salvar dados no localStorage para a próxima página
-    localStorage.setItem("musicData", JSON.stringify(formData));
+      // Step 2: Generate TTS voice
+      setLoadingStep("🎤 Criando a voz cantada...");
+      const ttsUrl = await generateTTS(lyrics);
 
-    setIsLoading(false);
-    navigate("/preview");
+      // Step 3: Generate instrumental music
+      setLoadingStep("🎵 Compondo a música instrumental...");
+      const musicUrl = await generateMusic(formData.theme, formData.ageGroup);
+
+      // Store results for Preview page
+      localStorage.setItem(
+        "musicResult",
+        JSON.stringify({
+          formData,
+          lyrics,
+          ttsUrl,
+          musicUrl,
+        })
+      );
+
+      setIsLoading(false);
+      navigate("/preview");
+    } catch (error) {
+      setIsLoading(false);
+      toast({
+        title: "Erro na geração 😔",
+        description: error instanceof Error ? error.message : "Algo deu errado. Tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -363,10 +391,12 @@ export default function CreateMusic() {
               </h2>
               <div className="flex items-center justify-center gap-2 text-muted-foreground">
                 <motion.span
+                  key={loadingStep}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: [1, 0.3, 1] }}
                   transition={{ duration: 1.5, repeat: Infinity }}
                 >
-                  ✨ Gerando letra personalizada
+                  {loadingStep || "✨ Preparando..."}
                 </motion.span>
               </div>
               <div className="mt-4 h-2 bg-muted rounded-full overflow-hidden">
