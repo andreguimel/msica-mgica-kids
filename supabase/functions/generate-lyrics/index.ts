@@ -85,10 +85,16 @@ ${specialMessage ? `- Incorpore naturalmente esta mensagem especial: "${specialM
     }
 
     const data = await response.json();
-    const lyrics = data.choices?.[0]?.message?.content?.trim();
+    console.log("AI response structure:", JSON.stringify(data).substring(0, 500));
+    
+    // Try multiple extraction paths
+    const lyrics = data.choices?.[0]?.message?.content?.trim()
+      || data.choices?.[0]?.text?.trim()
+      || (typeof data === "string" ? data.trim() : null);
 
     if (!lyrics) {
-      throw new Error("No lyrics generated");
+      console.error("Full AI response:", JSON.stringify(data));
+      throw new Error("No lyrics generated - unexpected response format");
     }
 
     return new Response(JSON.stringify({ lyrics }), {
