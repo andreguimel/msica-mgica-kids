@@ -46,18 +46,23 @@ export async function generateTTS(text: string): Promise<string> {
   return URL.createObjectURL(blob);
 }
 
-export async function generateMusic(theme: string, ageGroup: string): Promise<string> {
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-music`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ theme, ageGroup }),
-  });
+export async function generateMusic(theme: string, ageGroup: string): Promise<string | null> {
+  try {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-music`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ theme, ageGroup }),
+    });
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: "Erro ao gerar música" }));
-    throw new Error(error.error || `Erro ${response.status}`);
+    if (!response.ok) {
+      console.warn("Music generation unavailable:", response.status);
+      return null;
+    }
+
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
+  } catch (e) {
+    console.warn("Music generation failed:", e);
+    return null;
   }
-
-  const blob = await response.blob();
-  return URL.createObjectURL(blob);
 }
