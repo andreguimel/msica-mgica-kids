@@ -20,38 +20,45 @@ serve(async (req) => {
     }
 
     const themeStyles: Record<string, string> = {
-      animais: "happy children's music with animal sounds, playful xylophone and ukulele, farm animals theme",
-      princesas: "magical fairy tale children's music, gentle harp and celesta, princess waltz style",
-      "super-herois": "heroic upbeat children's music, exciting brass and drums, superhero adventure theme",
-      espaco: "dreamy space-themed children's music, synthesizer and twinkling bells, cosmic adventure",
-      natureza: "gentle nature-themed children's music, acoustic guitar and flute, birds singing, peaceful garden",
+      animais: "happy cheerful children's music with xylophone, ukulele, playful melody, animal farm theme",
+      princesas: "magical fairy tale music, gentle harp, celesta, twinkling bells, princess waltz",
+      "super-herois": "heroic upbeat children's music, exciting brass fanfare, drums, superhero adventure",
+      espaco: "dreamy space themed music, synthesizer, twinkling stars, cosmic adventure melody",
+      natureza: "gentle nature music, acoustic guitar, flute, birds singing, peaceful garden melody",
     };
 
     const style = themeStyles[theme] || themeStyles.animais;
-    const prompt = `${style}, suitable for children aged ${ageGroup} years old, Brazilian Portuguese children's song style, cheerful and catchy melody, 90 BPM`;
+    const prompt = `${style}, suitable for children aged ${ageGroup} years old, cheerful and catchy`;
 
-    const response = await fetch("https://api.elevenlabs.io/v1/music", {
+    const response = await fetch("https://api.elevenlabs.io/v1/sound-generation", {
       method: "POST",
       headers: {
         "xi-api-key": ELEVENLABS_API_KEY,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        prompt,
-        duration_seconds: 30,
+        text: prompt,
+        duration_seconds: 15,
+        prompt_influence: 0.5,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("ElevenLabs Music error:", response.status, errorText);
+      console.error("ElevenLabs SFX error:", response.status, errorText);
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "Limite de requisições atingido. Tente novamente em breve." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      throw new Error(`ElevenLabs Music error: ${response.status}`);
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "Créditos insuficientes no ElevenLabs." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      throw new Error(`ElevenLabs SFX error: ${response.status}`);
     }
 
     const audioBuffer = await response.arrayBuffer();
