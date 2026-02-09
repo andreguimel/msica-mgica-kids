@@ -3,8 +3,11 @@ project_id = "hdoaljpejropkjhazqxp"
 [functions.generate-lyrics]
 verify_jwt = false
 
-[functions.generate-tts]
+[functions.generate-song]
 verify_jwt = false
 
-[functions.generate-music]
+[functions.kie-callback]
+verify_jwt = false
+
+[functions.check-task]
 verify_jwt = false

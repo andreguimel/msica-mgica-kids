@@ -14,7 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      music_tasks: {
+        Row: {
+          age_group: string
+          audio_url: string | null
+          child_name: string
+          created_at: string
+          error_message: string | null
+          id: string
+          lyrics: string | null
+          status: string
+          task_id: string | null
+          theme: string
+        }
+        Insert: {
+          age_group: string
+          audio_url?: string | null
+          child_name: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          lyrics?: string | null
+          status?: string
+          task_id?: string | null
+          theme: string
+        }
+        Update: {
+          age_group?: string
+          audio_url?: string | null
+          child_name?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          lyrics?: string | null
+          status?: string
+          task_id?: string | null
+          theme?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

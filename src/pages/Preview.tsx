@@ -10,9 +10,7 @@ import {
   ShoppingCart,
   Music,
   FileText,
-  Video,
   Check,
-  Mic,
 } from "lucide-react";
 import { MagicButton } from "@/components/ui/MagicButton";
 import { FloatingElements } from "@/components/ui/FloatingElements";
@@ -26,25 +24,17 @@ interface MusicResult {
     specialMessage: string;
   };
   lyrics: string;
-  ttsUrl: string;
-  musicUrl: string | null;
+  audioUrl: string;
 }
 
 export default function Preview() {
   const navigate = useNavigate();
   const [result, setResult] = useState<MusicResult | null>(null);
 
-  // TTS audio
-  const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
-  const [ttsPlaying, setTtsPlaying] = useState(false);
-  const [ttsTime, setTtsTime] = useState(0);
-  const [ttsDuration, setTtsDuration] = useState(0);
-
-  // Music audio
-  const musicAudioRef = useRef<HTMLAudioElement | null>(null);
-  const [musicPlaying, setMusicPlaying] = useState(false);
-  const [musicTime, setMusicTime] = useState(0);
-  const [musicDuration, setMusicDuration] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
 
   useEffect(() => {
     const stored = localStorage.getItem("musicResult");
@@ -52,52 +42,28 @@ export default function Preview() {
       const data = JSON.parse(stored) as MusicResult;
       setResult(data);
 
-      // Create audio elements
-      const ttsAudio = new Audio(data.ttsUrl);
-      ttsAudioRef.current = ttsAudio;
-      ttsAudio.addEventListener("loadedmetadata", () => setTtsDuration(ttsAudio.duration));
-      ttsAudio.addEventListener("timeupdate", () => setTtsTime(ttsAudio.currentTime));
-      ttsAudio.addEventListener("ended", () => setTtsPlaying(false));
-
-      if (data.musicUrl) {
-        const musicAudio = new Audio(data.musicUrl);
-        musicAudioRef.current = musicAudio;
-        musicAudio.addEventListener("loadedmetadata", () => setMusicDuration(musicAudio.duration));
-        musicAudio.addEventListener("timeupdate", () => setMusicTime(musicAudio.currentTime));
-        musicAudio.addEventListener("ended", () => setMusicPlaying(false));
-      }
+      const audio = new Audio(data.audioUrl);
+      audioRef.current = audio;
+      audio.addEventListener("loadedmetadata", () => setDuration(audio.duration));
+      audio.addEventListener("timeupdate", () => setCurrentTime(audio.currentTime));
+      audio.addEventListener("ended", () => setIsPlaying(false));
 
       return () => {
-        ttsAudio.pause();
-        musicAudioRef.current?.pause();
+        audio.pause();
       };
     } else {
       navigate("/criar");
     }
   }, [navigate]);
 
-  const toggleTts = () => {
-    if (!ttsAudioRef.current) return;
-    if (ttsPlaying) {
-      ttsAudioRef.current.pause();
+  const togglePlay = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
     } else {
-      musicAudioRef.current?.pause();
-      setMusicPlaying(false);
-      ttsAudioRef.current.play();
+      audioRef.current.play();
     }
-    setTtsPlaying(!ttsPlaying);
-  };
-
-  const toggleMusic = () => {
-    if (!musicAudioRef.current) return;
-    if (musicPlaying) {
-      musicAudioRef.current.pause();
-    } else {
-      ttsAudioRef.current?.pause();
-      setTtsPlaying(false);
-      musicAudioRef.current.play();
-    }
-    setMusicPlaying(!musicPlaying);
+    setIsPlaying(!isPlaying);
   };
 
   const formatTime = (seconds: number) => {
@@ -146,28 +112,27 @@ export default function Preview() {
         </motion.div>
 
         <div className="grid lg:grid-cols-2 gap-8">
-          {/* Audio Players */}
+          {/* Audio Player */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="space-y-6"
           >
-            {/* TTS Player */}
             <div className="card-float">
               <h3 className="font-baloo font-bold text-lg mb-4 flex items-center gap-2">
-                <Mic className="w-5 h-5 text-primary" />
-                Voz Cantada
+                <Music className="w-5 h-5 text-primary" />
+                Sua Música Personalizada
               </h3>
               <div className="bg-muted/50 rounded-2xl p-4">
                 <div className="flex items-center gap-4">
                   <motion.button
-                    onClick={toggleTts}
+                    onClick={togglePlay}
                     className="w-12 h-12 bg-primary rounded-full flex items-center justify-center shadow-pink shrink-0"
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                   >
-                    {ttsPlaying ? (
+                    {isPlaying ? (
                       <Pause className="w-5 h-5 text-primary-foreground" fill="currentColor" />
                     ) : (
                       <Play className="w-5 h-5 text-primary-foreground ml-0.5" fill="currentColor" />
@@ -177,12 +142,12 @@ export default function Preview() {
                     <div className="h-2 bg-muted rounded-full overflow-hidden">
                       <div
                         className="h-full bg-primary transition-all"
-                        style={{ width: ttsDuration ? `${(ttsTime / ttsDuration) * 100}%` : "0%" }}
+                        style={{ width: duration ? `${(currentTime / duration) * 100}%` : "0%" }}
                       />
                     </div>
                     <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                      <span>{formatTime(ttsTime)}</span>
-                      <span>{formatTime(ttsDuration)}</span>
+                      <span>{formatTime(currentTime)}</span>
+                      <span>{formatTime(duration)}</span>
                     </div>
                   </div>
                   <Volume2 className="w-4 h-4 text-muted-foreground" />
@@ -190,58 +155,9 @@ export default function Preview() {
               </div>
             </div>
 
-            {/* Music Player */}
-            {result.musicUrl ? (
-              <div className="card-float">
-                <h3 className="font-baloo font-bold text-lg mb-4 flex items-center gap-2">
-                  <Music className="w-5 h-5 text-secondary" />
-                  Música Instrumental
-                </h3>
-                <div className="bg-muted/50 rounded-2xl p-4">
-                  <div className="flex items-center gap-4">
-                    <motion.button
-                      onClick={toggleMusic}
-                      className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center shrink-0"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                    >
-                      {musicPlaying ? (
-                        <Pause className="w-5 h-5 text-secondary-foreground" fill="currentColor" />
-                      ) : (
-                        <Play className="w-5 h-5 text-secondary-foreground ml-0.5" fill="currentColor" />
-                      )}
-                    </motion.button>
-                    <div className="flex-1">
-                      <div className="h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-secondary transition-all"
-                          style={{ width: musicDuration ? `${(musicTime / musicDuration) * 100}%` : "0%" }}
-                        />
-                      </div>
-                      <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                        <span>{formatTime(musicTime)}</span>
-                        <span>{formatTime(musicDuration)}</span>
-                      </div>
-                    </div>
-                    <Volume2 className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="card-float bg-accent/20">
-                <p className="text-sm text-center text-muted-foreground">
-                  🎵 Música instrumental indisponível no momento. A letra e voz foram geradas com sucesso!
-                </p>
-              </div>
-            )}
-
             {/* Preview image */}
             <div className="relative rounded-4xl overflow-hidden shadow-magic">
-              <img
-                src={heroImage}
-                alt="Preview do vídeo"
-                className="w-full h-auto"
-              />
+              <img src={heroImage} alt="Preview do vídeo" className="w-full h-auto" />
               <div className="watermark" />
             </div>
           </motion.div>
@@ -268,13 +184,10 @@ export default function Preview() {
 
             {/* O que você recebe */}
             <div className="card-float">
-              <h3 className="font-baloo font-bold text-lg mb-4">
-                Ao comprar você recebe:
-              </h3>
+              <h3 className="font-baloo font-bold text-lg mb-4">Ao comprar você recebe:</h3>
               <ul className="space-y-3">
                 {[
-                  { icon: Music, text: "MP3 completo da voz cantada" },
-                  { icon: Music, text: "MP3 da música instrumental" },
+                  { icon: Music, text: "MP3 completo da música cantada" },
                   { icon: FileText, text: "PDF com letra para imprimir" },
                   { icon: Download, text: "Download instantâneo" },
                 ].map((item, i) => (
@@ -292,22 +205,12 @@ export default function Preview() {
             {/* CTA de compra */}
             <div className="card-float bg-gradient-to-br from-primary/10 via-lavender/10 to-secondary/10 border-2 border-primary/30">
               <div className="text-center mb-4">
-                <p className="text-sm text-muted-foreground">
-                  Preço especial por tempo limitado
-                </p>
-                <p className="text-4xl font-baloo font-extrabold text-gradient">
-                  R$ 29,90
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Pagamento único via Pix
-                </p>
+                <p className="text-sm text-muted-foreground">Preço especial por tempo limitado</p>
+                <p className="text-4xl font-baloo font-extrabold text-gradient">R$ 29,90</p>
+                <p className="text-xs text-muted-foreground">Pagamento único via Pix</p>
               </div>
 
-              <MagicButton
-                size="lg"
-                className="w-full"
-                onClick={() => navigate("/pagamento")}
-              >
+              <MagicButton size="lg" className="w-full" onClick={() => navigate("/pagamento")}>
                 <ShoppingCart className="w-5 h-5" />
                 Quero a música completa!
               </MagicButton>
