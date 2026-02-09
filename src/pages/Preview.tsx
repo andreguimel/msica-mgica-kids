@@ -27,7 +27,7 @@ interface MusicResult {
   };
   lyrics: string;
   ttsUrl: string;
-  musicUrl: string;
+  musicUrl: string | null;
 }
 
 export default function Preview() {
@@ -59,15 +59,17 @@ export default function Preview() {
       ttsAudio.addEventListener("timeupdate", () => setTtsTime(ttsAudio.currentTime));
       ttsAudio.addEventListener("ended", () => setTtsPlaying(false));
 
-      const musicAudio = new Audio(data.musicUrl);
-      musicAudioRef.current = musicAudio;
-      musicAudio.addEventListener("loadedmetadata", () => setMusicDuration(musicAudio.duration));
-      musicAudio.addEventListener("timeupdate", () => setMusicTime(musicAudio.currentTime));
-      musicAudio.addEventListener("ended", () => setMusicPlaying(false));
+      if (data.musicUrl) {
+        const musicAudio = new Audio(data.musicUrl);
+        musicAudioRef.current = musicAudio;
+        musicAudio.addEventListener("loadedmetadata", () => setMusicDuration(musicAudio.duration));
+        musicAudio.addEventListener("timeupdate", () => setMusicTime(musicAudio.currentTime));
+        musicAudio.addEventListener("ended", () => setMusicPlaying(false));
+      }
 
       return () => {
         ttsAudio.pause();
-        musicAudio.pause();
+        musicAudioRef.current?.pause();
       };
     } else {
       navigate("/criar");
@@ -189,41 +191,49 @@ export default function Preview() {
             </div>
 
             {/* Music Player */}
-            <div className="card-float">
-              <h3 className="font-baloo font-bold text-lg mb-4 flex items-center gap-2">
-                <Music className="w-5 h-5 text-secondary" />
-                Música Instrumental
-              </h3>
-              <div className="bg-muted/50 rounded-2xl p-4">
-                <div className="flex items-center gap-4">
-                  <motion.button
-                    onClick={toggleMusic}
-                    className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center shrink-0"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    {musicPlaying ? (
-                      <Pause className="w-5 h-5 text-secondary-foreground" fill="currentColor" />
-                    ) : (
-                      <Play className="w-5 h-5 text-secondary-foreground ml-0.5" fill="currentColor" />
-                    )}
-                  </motion.button>
-                  <div className="flex-1">
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-secondary transition-all"
-                        style={{ width: musicDuration ? `${(musicTime / musicDuration) * 100}%` : "0%" }}
-                      />
+            {result.musicUrl ? (
+              <div className="card-float">
+                <h3 className="font-baloo font-bold text-lg mb-4 flex items-center gap-2">
+                  <Music className="w-5 h-5 text-secondary" />
+                  Música Instrumental
+                </h3>
+                <div className="bg-muted/50 rounded-2xl p-4">
+                  <div className="flex items-center gap-4">
+                    <motion.button
+                      onClick={toggleMusic}
+                      className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center shrink-0"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      {musicPlaying ? (
+                        <Pause className="w-5 h-5 text-secondary-foreground" fill="currentColor" />
+                      ) : (
+                        <Play className="w-5 h-5 text-secondary-foreground ml-0.5" fill="currentColor" />
+                      )}
+                    </motion.button>
+                    <div className="flex-1">
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-secondary transition-all"
+                          style={{ width: musicDuration ? `${(musicTime / musicDuration) * 100}%` : "0%" }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                        <span>{formatTime(musicTime)}</span>
+                        <span>{formatTime(musicDuration)}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                      <span>{formatTime(musicTime)}</span>
-                      <span>{formatTime(musicDuration)}</span>
-                    </div>
+                    <Volume2 className="w-4 h-4 text-muted-foreground" />
                   </div>
-                  <Volume2 className="w-4 h-4 text-muted-foreground" />
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="card-float bg-accent/20">
+                <p className="text-sm text-center text-muted-foreground">
+                  🎵 Música instrumental indisponível no momento. A letra e voz foram geradas com sucesso!
+                </p>
+              </div>
+            )}
 
             {/* Preview image */}
             <div className="relative rounded-4xl overflow-hidden shadow-magic">
