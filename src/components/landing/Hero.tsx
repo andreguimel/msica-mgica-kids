@@ -13,7 +13,7 @@ export function Hero() {
   const initialCount = 1234 + Math.floor(Math.random() * 500);
 
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-b from-sky/30 via-lavender/10 to-background stars-bg">
+    <section className="relative min-h-screen flex items-center overflow-hidden bg-background stars-bg">
       <FloatingElements />
       
       <div className="container-rounded relative z-10 py-20">
