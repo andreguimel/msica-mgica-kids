@@ -7,6 +7,15 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function generateAccessCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "MAGIC-";
+  for (let i = 0; i < 4; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -25,12 +34,11 @@ serve(async (req) => {
     const payload = await req.json();
     console.log("Kie.ai callback received:", JSON.stringify(payload).substring(0, 1000));
 
-    // Try to get internalId (UUID) from query params first
     const url = new URL(req.url);
     const internalId = url.searchParams.get("internalId");
     let taskId = url.searchParams.get("taskId") || payload.data?.taskId;
 
-    // Skip intermediate callbacks (text, first) - only process "complete"
+    // Skip intermediate callbacks
     const callbackType = payload.data?.callbackType;
     if (callbackType && callbackType !== "complete") {
       console.log(`Skipping intermediate callback type: ${callbackType}`);
@@ -53,7 +61,6 @@ serve(async (req) => {
     let errorMessage: string | null = null;
 
     if (status === "completed") {
-      // Extract audio URL from the callback data
       const songs = payload.data?.data;
       if (Array.isArray(songs) && songs.length > 0) {
         audioUrl = songs[0].audio_url || songs[0].audioUrl || null;
@@ -70,14 +77,81 @@ serve(async (req) => {
     const updateColumn = internalId ? "id" : "task_id";
     const updateValue = internalId || taskId;
 
-    console.log(`Updating task by ${updateColumn}=${updateValue}: status=${audioUrl ? "completed" : "failed"}, audioUrl=${audioUrl}`);
+    // If we have an audio URL, download it and store in Storage
+    let downloadUrl: string | null = null;
+    let downloadExpiresAt: string | null = null;
+    let accessCode: string | null = null;
+
+    if (audioUrl) {
+      try {
+        console.log("Downloading audio from:", audioUrl);
+        const audioResponse = await fetch(audioUrl);
+        if (!audioResponse.ok) {
+          throw new Error(`Failed to download audio: ${audioResponse.status}`);
+        }
+
+        const audioBlob = await audioResponse.arrayBuffer();
+        const filePath = `${updateValue}.mp3`;
+
+        console.log(`Uploading ${audioBlob.byteLength} bytes to music-files/${filePath}`);
+
+        const { error: uploadError } = await supabase.storage
+          .from("music-files")
+          .upload(filePath, audioBlob, {
+            contentType: "audio/mpeg",
+            upsert: true,
+          });
+
+        if (uploadError) {
+          console.error("Storage upload error:", uploadError);
+          throw new Error(`Upload failed: ${uploadError.message}`);
+        }
+
+        // Generate signed URL (30 days = 2592000 seconds)
+        const { data: signedData, error: signedError } = await supabase.storage
+          .from("music-files")
+          .createSignedUrl(filePath, 2592000);
+
+        if (signedError || !signedData?.signedUrl) {
+          console.error("Signed URL error:", signedError);
+          throw new Error("Failed to create signed URL");
+        }
+
+        downloadUrl = signedData.signedUrl;
+        downloadExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+        // Generate unique access code
+        let codeUnique = false;
+        let attempts = 0;
+        while (!codeUnique && attempts < 10) {
+          accessCode = generateAccessCode();
+          const { data: existing } = await supabase
+            .from("music_tasks")
+            .select("id")
+            .eq("access_code", accessCode)
+            .maybeSingle();
+          if (!existing) codeUnique = true;
+          attempts++;
+        }
+
+        console.log(`Stored audio successfully. Access code: ${accessCode}, Signed URL expires: ${downloadExpiresAt}`);
+      } catch (storageError) {
+        console.error("Storage error (non-fatal):", storageError);
+        // Continue with original audio URL if storage fails
+      }
+    }
+
+    console.log(`Updating task by ${updateColumn}=${updateValue}: status=${audioUrl ? "completed" : "failed"}`);
 
     const { error: dbError } = await supabase
       .from("music_tasks")
       .update({
         status: audioUrl ? "completed" : "failed",
-        audio_url: audioUrl,
+        audio_url: downloadUrl || audioUrl,
         error_message: errorMessage,
+        download_url: downloadUrl,
+        download_expires_at: downloadExpiresAt,
+        access_code: accessCode,
       })
       .eq(updateColumn, updateValue);
 

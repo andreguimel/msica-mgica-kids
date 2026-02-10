@@ -15,5 +15,8 @@ verify_jwt = false
 [functions.check-task]
 verify_jwt = false
 
+[functions.get-my-songs]
+verify_jwt = false
+
 [functions.start-music-after-payment]
 verify_jwt = false

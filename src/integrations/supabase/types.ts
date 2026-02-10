@@ -16,10 +16,13 @@ export type Database = {
     Tables: {
       music_tasks: {
         Row: {
+          access_code: string | null
           age_group: string
           audio_url: string | null
           child_name: string
           created_at: string
+          download_expires_at: string | null
+          download_url: string | null
           error_message: string | null
           id: string
           lyrics: string | null
@@ -28,10 +31,13 @@ export type Database = {
           theme: string
         }
         Insert: {
+          access_code?: string | null
           age_group: string
           audio_url?: string | null
           child_name: string
           created_at?: string
+          download_expires_at?: string | null
+          download_url?: string | null
           error_message?: string | null
           id?: string
           lyrics?: string | null
@@ -40,10 +46,13 @@ export type Database = {
           theme: string
         }
         Update: {
+          access_code?: string | null
           age_group?: string
           audio_url?: string | null
           child_name?: string
           created_at?: string
+          download_expires_at?: string | null
+          download_url?: string | null
           error_message?: string | null
           id?: string
           lyrics?: string | null

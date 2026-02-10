@@ -25,6 +25,14 @@ interface MusicData {
   specialMessage: string;
 }
 
+interface TaskStatus {
+  status: string;
+  audio_url?: string;
+  error_message?: string;
+  access_code?: string;
+  download_url?: string;
+}
+
 interface PackageSong {
   childName: string;
   audioUrl: string;
@@ -64,6 +72,7 @@ export default function Payment() {
   const [isChecking, setIsChecking] = useState(false);
   const [paymentState, setPaymentState] = useState<PaymentState>("pending");
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [accessCode, setAccessCode] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(900);
   const [stopPolling, setStopPolling] = useState<(() => void) | null>(null);
 
@@ -144,6 +153,7 @@ export default function Payment() {
         (status) => {
           if (status.status === "completed" && status.audio_url) {
             setAudioUrl(status.audio_url);
+            setAccessCode((status as any).access_code || null);
             setPaymentState("completed");
 
             // Save to package songs and decrement remaining
@@ -472,8 +482,28 @@ export default function Payment() {
                     </a>
                   )}
 
+                  {accessCode && (
+                    <div className="bg-accent/20 border-2 border-accent/40 rounded-2xl p-5 text-center">
+                      <p className="text-sm font-medium text-muted-foreground mb-2">
+                        📋 Seu código de acesso:
+                      </p>
+                      <p className="font-mono text-2xl font-extrabold tracking-widest text-foreground mb-2">
+                        {accessCode}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Guarde este código! Use-o para acessar suas músicas por até 30 dias.
+                      </p>
+                      <button
+                        onClick={() => navigate("/minhas-musicas")}
+                        className="text-primary text-sm font-semibold hover:underline mt-3 inline-block"
+                      >
+                        Acessar minhas músicas →
+                      </button>
+                    </div>
+                  )}
+
                   <p className="text-sm text-muted-foreground">
-                    ⏰ Link disponível por 24 horas
+                    🔗 Acesse suas músicas em <button onClick={() => navigate("/minhas-musicas")} className="text-primary font-semibold hover:underline">/minhas-musicas</button> com seu código
                   </p>
                 </div>
               </div>
