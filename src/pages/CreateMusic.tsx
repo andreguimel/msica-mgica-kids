@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -22,7 +22,7 @@ import {
 import { MagicButton } from "@/components/ui/MagicButton";
 import { FloatingElements } from "@/components/ui/FloatingElements";
 import { useToast } from "@/hooks/use-toast";
-import { startSongGeneration, pollTaskStatus } from "@/services/musicPipeline";
+import { generateLyricsOnly } from "@/services/musicPipeline";
 
 const themes = [
   { value: "animais", label: "🐻 Animais", emoji: "🐻" },
@@ -49,21 +49,12 @@ export default function CreateMusic() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState("");
-  const [stopPolling, setStopPolling] = useState<(() => void) | null>(null);
   const [formData, setFormData] = useState<FormData>({
     childName: "",
     ageGroup: "",
     theme: "",
     specialMessage: "",
   });
-
-  // Cleanup polling on unmount
-  useEffect(() => {
-    return () => {
-      stopPolling?.();
-    };
-  }, [stopPolling]);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,47 +75,18 @@ export default function CreateMusic() {
     setIsLoading(true);
 
     try {
-      // Step 1: Generate lyrics + send to Kie.ai
-      setLoadingStep("✨ Gerando letra personalizada...");
-      const { taskId, lyrics } = await startSongGeneration(formData);
+      const { taskId, lyrics } = await generateLyricsOnly(formData);
 
-      // Step 2: Poll for completion
-      setLoadingStep("🎵 Compondo sua música... isso pode levar até 2 minutos");
-
-      const stop = pollTaskStatus(
-        taskId,
-        (status) => {
-          if (status.status === "completed" && status.audio_url) {
-            setIsLoading(false);
-            localStorage.setItem(
-              "musicResult",
-              JSON.stringify({
-                formData,
-                lyrics,
-                audioUrl: status.audio_url,
-              })
-            );
-            navigate("/preview");
-          } else if (status.status === "failed") {
-            setIsLoading(false);
-            toast({
-              title: "Erro na geração 😔",
-              description: status.error_message || "A geração da música falhou. Tente novamente.",
-              variant: "destructive",
-            });
-          }
-        },
-        (error) => {
-          setIsLoading(false);
-          toast({
-            title: "Erro na geração 😔",
-            description: error.message,
-            variant: "destructive",
-          });
-        }
+      // Save to localStorage and redirect to preview
+      localStorage.setItem(
+        "musicResult",
+        JSON.stringify({
+          taskId,
+          formData,
+          lyrics,
+        })
       );
-
-      setStopPolling(() => stop);
+      navigate("/preview");
     } catch (error) {
       setIsLoading(false);
       toast({
@@ -375,20 +337,19 @@ export default function CreateMusic() {
                 🪄
               </motion.div>
               <h2 className="text-2xl font-baloo font-bold mb-4">
-                Criando sua música mágica...
+                Gerando sua letra mágica...
               </h2>
               <div className="flex items-center justify-center gap-2 text-muted-foreground">
                 <motion.span
-                  key={loadingStep}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: [1, 0.3, 1] }}
                   transition={{ duration: 1.5, repeat: Infinity }}
                 >
-                  {loadingStep || "✨ Preparando..."}
+                  ✨ Criando letra personalizada...
                 </motion.span>
               </div>
               <p className="text-xs text-muted-foreground mt-3">
-                Isso pode levar até 2 minutos
+                Isso leva apenas alguns segundos
               </p>
               <div className="mt-4 h-2 bg-muted rounded-full overflow-hidden">
                 <motion.div
