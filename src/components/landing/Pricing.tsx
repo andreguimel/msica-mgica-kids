@@ -158,7 +158,7 @@ export function Pricing() {
           <div className="inline-flex items-center gap-2 px-6 py-3 bg-mint/20 rounded-full">
             <span className="text-2xl">🛡️</span>
             <span className="text-sm font-medium">
-              Satisfação garantida ou seu dinheiro de volta em até 7 dias
+              Garantia de funcionamento — reembolso via Pix em caso de erro técnico
             </span>
           </div>
         </motion.div>
