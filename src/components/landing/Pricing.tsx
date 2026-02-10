@@ -6,7 +6,7 @@ import { MagicButton } from "@/components/ui/MagicButton";
 const plans = [
   {
     name: "Música Mágica",
-    price: "19,90",
+    price: "14,90",
     description: "1 música personalizada completa",
     popular: true,
     features: [
