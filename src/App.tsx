@@ -8,6 +8,7 @@ import CreateMusic from "./pages/CreateMusic";
 import Preview from "./pages/Preview";
 import Payment from "./pages/Payment";
 import NotFound from "./pages/NotFound";
+import { PurchaseNotification } from "./components/ui/PurchaseNotification";
 
 const queryClient = new QueryClient();
 
@@ -16,6 +17,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <PurchaseNotification />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
