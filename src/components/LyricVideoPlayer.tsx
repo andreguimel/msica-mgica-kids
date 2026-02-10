@@ -23,8 +23,8 @@ export default function LyricVideoPlayer({ audioUrl, lyrics, images, childName }
     .filter((l) => l.length > 0);
 
   // Offset: skip intro (~12%) and outro (~8%) of the song for better vocal sync
-  const introRatio = 0.12;
-  const outroRatio = 0.08;
+  const introRatio = 0.05;
+  const outroRatio = 0.05;
   const lyricsStart = duration * introRatio;
   const lyricsEnd = duration * (1 - outroRatio);
   const lyricsDuration = lyricsEnd - lyricsStart;
