@@ -183,11 +183,10 @@ export default function MyMusic() {
                       </div>
                     ) : song.audioUrl ? (
                       <>
-                        {song.lyrics && song.videoImages.length > 0 ? (
+                        {song.videoImages.length > 0 ? (
                           <div className="mb-3">
                             <LyricVideoPlayer
                               audioUrl={song.audioUrl}
-                              lyrics={song.lyrics}
                               images={song.videoImages}
                               childName={song.childName}
                             />
