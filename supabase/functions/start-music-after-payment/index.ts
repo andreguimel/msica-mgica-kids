@@ -8,11 +8,11 @@ const corsHeaders = {
 };
 
 const themeStyles: Record<string, string> = {
-  animais: "children's music, cheerful, playful, cute, acoustic guitar",
-  princesas: "children's music, magical, fairy tale, gentle, harp, flute",
-  "super-herois": "children's music, heroic, energetic, upbeat, drums, brass",
-  espaco: "children's music, cosmic, dreamy, synth, electronic, wonder",
-  natureza: "children's music, peaceful, folk, acoustic, birds chirping",
+  animais: "children's music, cheerful, playful, happy, cute, acoustic guitar, ukulele, bright, fun, singalong",
+  princesas: "children's music, cheerful, happy, magical, fairy tale, gentle, harp, flute, joyful, bright",
+  "super-herois": "children's music, cheerful, happy, heroic, energetic, upbeat, drums, brass, fun, exciting",
+  espaco: "children's music, cheerful, happy, cosmic, wonder, synth, playful, bright, adventure, fun",
+  natureza: "children's music, cheerful, happy, peaceful, folk, acoustic, joyful, bright, singalong, fun",
 };
 
 serve(async (req) => {
