@@ -11,16 +11,24 @@ const themeDescriptions: Record<string, string> = {
   animais: "animais fofinhos como coelhos, ursos, passarinhos",
   princesas: "princesas, castelos encantados, magia e bondade",
   "super-herois": "super-heróis, poderes especiais, coragem e aventura",
+  "super-heroinas": "super-heroínas, poderes especiais, coragem e aventura feminina",
   espaco: "espaço sideral, foguetes, estrelas, planetas e aventura cósmica",
   natureza: "natureza, flores, borboletas, arco-íris e jardins encantados",
+  dinossauros: "dinossauros, aventuras pré-históricas, fósseis e rugidos divertidos",
+  futebol: "futebol, gols, jogadas incríveis, torcida e alegria no campo",
+  fadas: "fadas encantadas, varinhas mágicas, jardins secretos e pó de estrela",
 };
 
 const themeStyles: Record<string, string> = {
   animais: "children's music, cheerful, playful, cute, acoustic guitar",
   princesas: "children's music, magical, fairy tale, gentle, harp, flute",
   "super-herois": "children's music, heroic, energetic, upbeat, drums, brass",
+  "super-heroinas": "children's music, heroic, energetic, upbeat, girl power anthem",
   espaco: "children's music, cosmic, dreamy, synth, electronic, wonder",
   natureza: "children's music, peaceful, folk, acoustic, birds chirping",
+  dinossauros: "children's music, adventurous, playful, stomping beats, fun",
+  futebol: "children's music, energetic, stadium chant, upbeat, clapping, whistles",
+  fadas: "children's music, magical, ethereal, gentle, harp, bells, whimsical",
 };
 
 serve(async (req) => {
