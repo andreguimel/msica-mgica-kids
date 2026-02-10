@@ -1,109 +1,70 @@
 
 
-# Lyric Video + Imagens IA (Opcao Combinada)
+# Video com Ilustracoes IA (sem letra)
 
-## Visao Geral
+## O que muda
 
-Criar um player de video integrado que combina:
-- **Fundo**: Imagens geradas por IA (Nano Banana / gemini-2.5-flash-image) baseadas no tema da crianca
-- **Frente**: Letra da musica aparecendo de forma animada, sincronizada com o audio
+Hoje o sistema ja gera 4 ilustracoes por IA e monta um "lyric video" com a letra aparecendo por cima. A mudanca e simplificar: o video sera um slideshow das ilustracoes com a musica tocando, sem texto nenhum por cima.
 
-Tudo processado no **frontend** usando Canvas/HTML, sem custo de video generativo. As imagens sao geradas via Lovable AI (custo minimo, ja incluso).
+## Alteracoes
 
-## Como Funciona
+### 1. Simplificar o exportador de video (`src/utils/videoExport.ts`)
 
-```text
-Musica gerada (callback) --> Edge function gera 4-6 imagens do tema
---> Salva URLs no banco --> Frontend monta o "video player"
---> Canvas: imagens de fundo em transicao + letra animada por cima
---> Usuario pode assistir e compartilhar
-```
+Remover toda a logica de renderizacao de letra (linhas de texto, prev/next line, badge com nome). O video ficara apenas:
+- Imagens de fundo trocando com transicao suave (fade) a cada X segundos
+- Audio da musica tocando
+- Sem overlay de texto, sem badge, sem letra
 
-## Custo Estimado
+A funcao `drawFrame` sera simplificada para desenhar apenas a imagem de fundo cobrindo o canvas inteiro, sem gradientes escuros pesados (apenas um leve vinheta para dar profissionalismo).
 
-- **Imagens IA (Nano Banana)**: 4-6 imagens por musica, custo praticamente zero (ja incluso no Lovable AI)
-- **Video**: Zero - renderizado no frontend com HTML/Canvas
-- **Storage**: Apenas as imagens (~200KB cada) no bucket existente
+### 2. Simplificar o componente de downloads (`src/components/SongDownloads.tsx`)
 
-## Etapas de Implementacao
+- Botao unico "Baixar Video" que inicia a geracao e faz download automatico ao terminar
+- Manter a barra de progresso durante a geracao
+- Adicionar toast de sucesso/erro
 
-### 1. Nova Edge Function: generate-video-images
+### 3. Remover o LyricVideoPlayer como player principal
 
-Gera 4-6 ilustracoes infantis baseadas no tema e nome da crianca usando o modelo `google/gemini-2.5-flash-image`. Faz upload das imagens para o bucket `music-files` e salva os caminhos no banco.
+O componente `LyricVideoPlayer.tsx` atualmente exibe o video com letra sincronizada. Como a letra nao sera mais exibida no video, esse componente sera simplificado ou substituido por um player de audio + galeria de imagens na tela de conclusao.
 
-### 2. Atualizar banco de dados
+### 4. Ajustar a pagina de pagamento (`src/pages/Payment.tsx`)
 
-Adicionar coluna `video_images` (jsonb) na tabela `music_tasks` para armazenar os caminhos das imagens geradas.
+Na tela de conclusao (musica pronta), mostrar:
+- Player de audio (ja existe)
+- Galeria das ilustracoes geradas
+- Botoes de download: MP3, Letra (.txt), Ilustracoes, Video (slideshow)
 
-### 3. Atualizar kie-callback
-
-Apos a musica ser gerada com sucesso, chamar a funcao `generate-video-images` para gerar as ilustracoes automaticamente.
-
-### 4. Componente LyricVideoPlayer
-
-Componente React que:
-- Reproduz o audio
-- Exibe imagens de fundo com transicao suave (fade) a cada ~15 segundos
-- Mostra a letra linha por linha com animacao de entrada
-- Calcula a posicao da letra baseada no tempo do audio (divisao uniforme)
-- Controles de play/pause integrados ao visual
-
-### 5. Integrar na pagina de conclusao (Payment.tsx)
-
-Apos a musica estar pronta, exibir o lyric video player alem do player de audio simples.
-
-### 6. Integrar na pagina Minhas Musicas (MyMusic.tsx)
-
-Exibir o lyric video player tambem quando o usuario recupera suas musicas.
+---
 
 ## Detalhes Tecnicos
 
-### Edge Function generate-video-images
+### videoExport.ts - Nova versao simplificada
 
-- Recebe: `taskId`, `childName`, `theme`
-- Usa Lovable AI (`google/gemini-2.5-flash-image`) para gerar 4-6 imagens com prompts tipo:
-  - "Cute colorful children's illustration of [childName] playing with [theme elements], whimsical cartoon style, soft pastel colors, no text"
-- Converte base64 para arquivo e faz upload para `music-files/images/{taskId}_1.png`, etc.
-- Gera signed URLs para cada imagem (30 dias)
-- Salva array de URLs no campo `video_images` da task
+A funcao `exportVideo` mantera a mesma estrutura (Canvas + MediaRecorder + Audio), mas `drawFrame` fara apenas:
+1. Desenhar a imagem de fundo com "cover fit"
+2. Aplicar um leve gradiente nas bordas (vinheta suave)
+3. Sem texto algum
 
-### Coluna nova em music_tasks
+A transicao entre imagens sera feita com um fade: nos ultimos 30 frames antes da troca, a opacidade da proxima imagem aumenta gradualmente.
 
-```text
-video_images: jsonb (nullable, default null)
--- Armazena array de URLs das imagens: ["url1", "url2", ...]
-```
+Props simplificadas - o parametro `lyrics` sera removido da interface `VideoExportOptions`.
 
-### Componente LyricVideoPlayer
+### SongDownloads.tsx - Interface simplificada
 
-- Props: `audioUrl`, `lyrics`, `images`, `childName`
-- Usa elemento `<audio>` oculto com `timeupdate` para sincronizar
-- Divide a letra em linhas e distribui uniformemente pelo tempo total do audio
-- Imagens de fundo trocam com fade transition CSS
-- Letra aparece com animacao de opacidade + translateY
-- Overlay semi-transparente escuro para garantir legibilidade da letra
-- Botao play/pause centralizado com visual atraente
-- Responsivo (funciona em mobile)
+- Remover `VIDEO_SIZES` e a tela de selecao de tamanho
+- Botao "Baixar Video" que gera direto em 1080x1920 (9:16)
+- Durante a geracao: barra de progresso + texto "Gerando video... X%"
+- Ao terminar: download automatico + toast de sucesso
+- Se falhar: toast de erro
 
-### Fluxo no kie-callback (atualizado)
+### LyricVideoPlayer.tsx
 
-Apos salvar o audio com sucesso:
-1. Chama internamente a funcao `generate-video-images` passando taskId, childName, theme
-2. Isso acontece em paralelo (nao bloqueia o retorno do callback)
-3. O frontend faz polling e detecta quando `video_images` esta populado
+Sera simplificado para um player de audio com visualizacao das ilustracoes em carrossel/slideshow. Sem sincronizacao de letra.
 
-### Atualizacao do check-task
+### Arquivos afetados
 
-Retornar tambem o campo `video_images` e `lyrics` para o frontend poder montar o player.
-
-## Arquivos a Criar/Alterar
-
-1. **Migracao SQL** - Adicionar coluna `video_images` (jsonb)
-2. **supabase/functions/generate-video-images/index.ts** - Nova funcao para gerar imagens
-3. **supabase/functions/kie-callback/index.ts** - Chamar geracao de imagens apos audio pronto
-4. **supabase/functions/check-task/index.ts** - Retornar `video_images`
-5. **src/components/LyricVideoPlayer.tsx** - Novo componente de lyric video
-6. **src/pages/Payment.tsx** - Integrar o player na tela de conclusao
-7. **src/pages/MyMusic.tsx** - Integrar o player na tela de recuperacao
-8. **supabase/config.toml** - Registrar nova funcao
+1. `src/utils/videoExport.ts` - Simplificar drawFrame, remover logica de letra
+2. `src/components/SongDownloads.tsx` - Simplificar interface, botao direto de video
+3. `src/components/LyricVideoPlayer.tsx` - Simplificar para player de audio + galeria
+4. `src/pages/Payment.tsx` - Ajustar integracao com novo player simplificado
 
