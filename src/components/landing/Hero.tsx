@@ -17,7 +17,7 @@ export function Hero() {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
-  const initialCount = 1234 + Math.floor(Math.random() * 500);
+  const [initialCount] = useState(() => 1234 + Math.floor(Math.random() * 500));
 
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
