@@ -9,15 +9,15 @@ import {
 const faqs = [
   {
     question: "Quanto tempo leva para criar a música?",
-    answer: "A magia acontece em menos de 1 minuto! Nossa IA avançada gera a letra, música e vídeo personalizado rapidamente. Você pode pré-visualizar antes de comprar.",
+    answer: "A magia acontece em menos de 1 minuto! Nossa IA avançada gera a letra e a música personalizada rapidamente. Você pode pré-visualizar antes de comprar.",
   },
   {
     question: "Posso escolher o estilo da música?",
     answer: "Sim! Você escolhe o tema (Animais, Princesas, Super-heróis, Espaço ou Natureza) e a IA cria uma música alegre e educativa baseada na sua escolha.",
   },
   {
-    question: "O vídeo tem o nome da criança?",
-    answer: "Com certeza! O nome da criança aparece na letra da música, é cantado e também é exibido nas animações do vídeo. Uma experiência totalmente personalizada!",
+    question: "A música tem o nome da criança?",
+    answer: "Com certeza! O nome da criança aparece na letra da música e é cantado várias vezes. Uma experiência totalmente personalizada!",
   },
   {
     question: "Como funciona o pagamento?",

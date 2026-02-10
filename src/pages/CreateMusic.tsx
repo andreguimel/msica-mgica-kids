@@ -190,7 +190,7 @@ export default function CreateMusic() {
                     maxLength={30}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Este nome aparecerá na letra e no vídeo
+                    Este nome aparecerá na letra da música
                   </p>
                 </div>
 
@@ -371,8 +371,7 @@ export default function CreateMusic() {
               <ul className="space-y-3">
                 {[
                   "🎵 Música completa cantada com o nome da criança",
-                  "🎬 Vídeo animado em HD com a letra",
-                  "📄 PDF com a letra completa para imprimir",
+                  "📝 Letra exclusiva personalizada",
                   "⬇️ Download instantâneo após pagamento",
                 ].map((item, i) => (
                   <motion.li

@@ -12,14 +12,14 @@ const steps = [
     number: "2",
     emoji: "🪄",
     title: "A Magia Acontece",
-    description: "Nossa IA cria letra, música e vídeo personalizados em menos de 1 minuto",
+    description: "Nossa IA cria letra e música personalizados em menos de 1 minuto",
     color: "bg-secondary",
   },
   {
     number: "3",
     emoji: "👀",
     title: "Pré-visualize",
-    description: "Ouça um trecho e veja o vídeo demo gratuitamente antes de comprar",
+    description: "Ouça um trecho da música gratuitamente antes de comprar",
     color: "bg-mint",
   },
   {
