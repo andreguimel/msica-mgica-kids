@@ -47,9 +47,12 @@ const themesByGender: Record<string, { value: string; label: string; emoji: stri
 };
 
 const ageGroups = [
+  { value: "0-2", label: "0-2 anos" },
   { value: "3-4", label: "3-4 anos" },
   { value: "5-6", label: "5-6 anos" },
   { value: "7-8", label: "7-8 anos" },
+  { value: "9-10", label: "9-10 anos" },
+  { value: "11+", label: "11+ anos" },
 ];
 
 interface FormData {
