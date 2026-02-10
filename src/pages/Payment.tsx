@@ -26,6 +26,11 @@ interface MusicData {
 
 type PaymentState = "pending" | "generating" | "completed";
 
+const planInfo = {
+  single: { label: "Música Mágica", price: "19,90", priceNum: "19.90", description: "1 música personalizada" },
+  pacote: { label: "Pacote Encantado", price: "49,90", priceNum: "49.90", description: "3 músicas personalizadas" },
+};
+
 export default function Payment() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -37,6 +42,8 @@ export default function Payment() {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(900);
   const [stopPolling, setStopPolling] = useState<(() => void) | null>(null);
+  const selectedPlan = localStorage.getItem("selectedPlan") || "single";
+  const plan = planInfo[selectedPlan as keyof typeof planInfo];
 
   const pixCode = "00020126580014br.gov.bcb.pix0136a1b2c3d4-e5f6-7890-abcd-ef1234567890520400005303986540519.905802BR5925MUSICA MAGICA PARA CRIA6009SAO PAULO62070503***6304ABCD";
 
@@ -194,15 +201,15 @@ export default function Payment() {
               {/* Card de pagamento */}
               <div className="card-float">
                 <div className="text-center border-b border-border pb-6 mb-6">
-                  <span className="text-5xl block mb-4">🎵</span>
+                  <span className="text-5xl block mb-4">{selectedPlan === "pacote" ? "🎁" : "🎵"}</span>
                   <h3 className="font-baloo font-bold text-xl mb-2">
-                    Música Mágica para {musicData.childName}
+                    {plan.label} para {musicData.childName}
                   </h3>
                   <p className="text-muted-foreground text-sm mb-4">
-                    MP3 completo + PDF da letra
+                    {plan.description}
                   </p>
                   <p className="text-4xl font-baloo font-extrabold text-gradient">
-                    R$ 19,90
+                    R$ {plan.price}
                   </p>
                 </div>
 
