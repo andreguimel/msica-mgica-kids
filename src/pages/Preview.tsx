@@ -79,6 +79,8 @@ export default function Preview() {
 
   const selectedPlan = localStorage.getItem("selectedPlan") || "single";
   const isPacote = selectedPlan === "pacote";
+  const packageSongsRemaining = parseInt(localStorage.getItem("packageSongsRemaining") || "0", 10);
+  const isPackageFollowUp = isPacote && packageSongsRemaining > 0;
 
   const handleBuy = () => {
     localStorage.setItem("musicTaskId", taskId);
@@ -197,18 +199,34 @@ export default function Preview() {
             {/* CTA de compra */}
             <div className="card-float bg-gradient-to-br from-primary/10 via-lavender/10 to-secondary/10 border-2 border-primary/30">
               <div className="text-center mb-4">
-                <p className="text-sm text-muted-foreground">Preço especial por tempo limitado</p>
-                <p className="text-4xl font-baloo font-extrabold text-gradient">
-                  R$ {isPacote ? "49,90" : "19,90"}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {isPacote ? "3 músicas personalizadas • Pix" : "Pagamento único via Pix"}
-                </p>
+                {isPackageFollowUp ? (
+                  <>
+                    <p className="text-sm font-medium text-primary mb-1">🎁 Pacote Encantado</p>
+                    <p className="text-lg font-baloo font-bold">Já incluso no seu pacote!</p>
+                    <p className="text-xs text-muted-foreground">
+                      {packageSongsRemaining} {packageSongsRemaining === 1 ? "música restante" : "músicas restantes"}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-muted-foreground">Preço especial por tempo limitado</p>
+                    <p className="text-4xl font-baloo font-extrabold text-gradient">
+                      R$ {isPacote ? "49,90" : "19,90"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {isPacote ? "3 músicas personalizadas • Pix" : "Pagamento único via Pix"}
+                    </p>
+                  </>
+                )}
               </div>
 
               <MagicButton size="lg" className="w-full" onClick={handleBuy}>
                 <ShoppingCart className="w-5 h-5" />
-                {isPacote ? "Quero o pacote completo!" : "Quero a música completa!"}
+                {isPackageFollowUp
+                  ? "Gerar esta música!"
+                  : isPacote
+                  ? "Quero o pacote completo!"
+                  : "Quero a música completa!"}
               </MagicButton>
 
               <p className="text-center text-xs text-muted-foreground mt-4">
