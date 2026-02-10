@@ -31,11 +31,20 @@ serve(async (req) => {
       );
     }
 
-    const { data, error } = await supabase
-      .from("music_tasks")
-      .select("status, audio_url, lyrics, error_message")
-      .eq("task_id", taskId)
-      .single();
+    // Try lookup by UUID (id) first, then by task_id
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(taskId);
+
+    const { data, error } = isUuid
+      ? await supabase
+          .from("music_tasks")
+          .select("status, audio_url, lyrics, error_message")
+          .eq("id", taskId)
+          .single()
+      : await supabase
+          .from("music_tasks")
+          .select("status, audio_url, lyrics, error_message")
+          .eq("task_id", taskId)
+          .single();
 
     if (error) {
       console.error("DB query error:", error);

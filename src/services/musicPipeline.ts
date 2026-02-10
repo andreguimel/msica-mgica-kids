@@ -7,39 +7,54 @@ const headers = {
   Authorization: `Bearer ${SUPABASE_KEY}`,
 };
 
-interface GenerateSongParams {
+interface GenerateLyricsParams {
   childName: string;
   ageGroup: string;
   theme: string;
   specialMessage: string;
 }
 
-interface StartSongResult {
+interface GenerateLyricsResult {
   taskId: string;
   lyrics: string;
 }
 
 interface TaskStatus {
-  status: "processing" | "completed" | "failed";
+  status: "awaiting_payment" | "processing" | "completed" | "failed";
   audio_url: string | null;
   lyrics: string | null;
   error_message: string | null;
 }
 
-export async function startSongGeneration(params: GenerateSongParams): Promise<StartSongResult> {
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-song`, {
+// Step 1: Generate lyrics only (no Kie.ai cost)
+export async function generateLyricsOnly(params: GenerateLyricsParams): Promise<GenerateLyricsResult> {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-lyrics-only`, {
     method: "POST",
     headers,
     body: JSON.stringify(params),
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: "Erro ao gerar música" }));
+    const error = await response.json().catch(() => ({ error: "Erro ao gerar letra" }));
     throw new Error(error.error || `Erro ${response.status}`);
   }
 
   const data = await response.json();
   return { taskId: data.taskId, lyrics: data.lyrics };
+}
+
+// Step 2: Start music generation after payment
+export async function startMusicAfterPayment(taskId: string): Promise<void> {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/start-music-after-payment`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ taskId }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: "Erro ao iniciar geração" }));
+    throw new Error(error.error || `Erro ${response.status}`);
+  }
 }
 
 export async function checkTaskStatus(taskId: string): Promise<TaskStatus> {
