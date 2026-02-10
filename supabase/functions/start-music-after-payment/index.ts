@@ -57,7 +57,7 @@ serve(async (req) => {
 
     // Send lyrics to Kie.ai
     const style = themeStyles[task.theme] || themeStyles.animais;
-    const callBackUrl = `${SUPABASE_URL}/functions/v1/kie-callback`;
+    const callBackUrl = `${SUPABASE_URL}/functions/v1/kie-callback?internalId=${taskId}`;
 
     console.log("Sending to Kie.ai after payment...");
 
