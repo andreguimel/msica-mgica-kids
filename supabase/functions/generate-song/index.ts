@@ -49,14 +49,17 @@ serve(async (req) => {
     const systemPrompt = `Você é um compositor de músicas infantis em português brasileiro. Crie letras alegres, rimadas e fáceis de cantar para crianças.
 
 Regras:
-- A letra DEVE incluir o nome "${childName}" pelo menos 3 vezes
+- O NOME "${childName}" é o elemento MAIS IMPORTANTE da música. Ele DEVE aparecer pelo menos 5 vezes, incluindo no refrão
+- O refrão DEVE começar ou terminar com o nome "${childName}"
+- Use o nome "${childName}" de forma natural e melódica, como parte central das frases
 - Use linguagem simples e adequada para crianças de ${ageGroup} anos
 - O tema deve ser sobre: ${themeDesc}
-- Crie 2 estrofes + 1 refrão que se repete
+- IMPORTANTE: A letra deve ser CURTA, para uma música de no máximo 1 minuto e 30 segundos
+- Crie 1 estrofe + 1 refrão + 1 estrofe + refrão final
 - Cada estrofe deve ter 4 linhas
 - O refrão deve ter 4 linhas e ser bem cativante
 - Use rimas AABB ou ABAB
-- A letra deve ter entre 16 e 24 linhas no total
+- A letra deve ter entre 12 e 16 linhas no total (para caber em 1:30)
 - NÃO use emojis na letra
 - NÃO inclua títulos ou marcações como "Estrofe 1" ou "Refrão"
 - Retorne APENAS o texto da letra, sem explicações
@@ -105,7 +108,7 @@ ${specialMessage ? `- Incorpore naturalmente esta mensagem especial: "${specialM
     // Step 2: Send to Kie.ai (Suno API)
     const callBackUrl = `${SUPABASE_URL}/functions/v1/kie-callback`;
     const style = themeStyles[theme] || themeStyles.animais;
-    const title = `Música para ${childName}`;
+    const title = `${childName}`;
 
     console.log("Sending to Kie.ai with callBackUrl:", callBackUrl);
 
