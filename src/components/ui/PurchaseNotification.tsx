@@ -70,7 +70,7 @@ export function PurchaseNotification() {
           animate={{ opacity: 1, x: 0, y: 0 }}
           exit={{ opacity: 0, x: -80 }}
           transition={{ type: "spring", damping: 20, stiffness: 300 }}
-          className="fixed bottom-6 left-6 z-50 max-w-xs"
+          className="fixed top-6 right-6 z-50 max-w-xs"
         >
           <div className="bg-card border border-border rounded-2xl shadow-lg p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
