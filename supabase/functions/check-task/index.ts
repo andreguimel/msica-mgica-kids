@@ -37,14 +37,14 @@ serve(async (req) => {
     const { data, error } = isUuid
       ? await supabase
           .from("music_tasks")
-          .select("status, audio_url, lyrics, error_message, access_code, download_url")
+          .select("status, audio_url, lyrics, error_message, access_code, download_url, video_images")
           .eq("id", taskId)
-          .single()
+          .maybeSingle()
       : await supabase
           .from("music_tasks")
-          .select("status, audio_url, lyrics, error_message, access_code, download_url")
+          .select("status, audio_url, lyrics, error_message, access_code, download_url, video_images")
           .eq("task_id", taskId)
-          .single();
+          .maybeSingle();
 
     if (error) {
       console.error("DB query error:", error);

@@ -1,0 +1,1 @@
+ALTER TABLE public.music_tasks ADD COLUMN video_images jsonb DEFAULT NULL;
