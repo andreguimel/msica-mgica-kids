@@ -25,34 +25,10 @@ serve(async (req) => {
     const payload = await req.json();
     console.log("Kie.ai callback received:", JSON.stringify(payload).substring(0, 1000));
 
-    // Try to get taskId from query params first, then from payload
+    // Try to get internalId (UUID) from query params first
     const url = new URL(req.url);
+    const internalId = url.searchParams.get("internalId");
     let taskId = url.searchParams.get("taskId") || payload.data?.taskId;
-    
-    // If still no taskId, try to find it by matching the song ID in our database
-    if (!taskId) {
-      const songs = payload.data?.data;
-      if (Array.isArray(songs) && songs.length > 0) {
-        const songId = songs[0].id;
-        if (songId) {
-          console.log("No taskId in payload, looking up by song content...");
-          // Try to find the task by checking recent processing tasks
-          const { data: tasks } = await supabase
-            .from("music_tasks")
-            .select("task_id")
-            .eq("status", "processing")
-            .order("created_at", { ascending: false })
-            .limit(5);
-          
-          if (tasks && tasks.length === 1) {
-            taskId = tasks[0].task_id;
-            console.log("Found single processing task:", taskId);
-          } else {
-            console.log("Multiple or no processing tasks found, cannot auto-match");
-          }
-        }
-      }
-    }
 
     // Skip intermediate callbacks (text, first) - only process "complete"
     const callbackType = payload.data?.callbackType;
@@ -65,9 +41,9 @@ serve(async (req) => {
 
     const status = payload.code === 200 ? "completed" : "failed";
 
-    if (!taskId) {
-      console.error("No taskId in callback payload");
-      return new Response(JSON.stringify({ status: "error", message: "No taskId" }), {
+    if (!internalId && !taskId) {
+      console.error("No internalId or taskId in callback");
+      return new Response(JSON.stringify({ status: "error", message: "No task identifier" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -91,7 +67,10 @@ serve(async (req) => {
       errorMessage = payload.msg || "Generation failed";
     }
 
-    console.log(`Updating task ${taskId}: status=${audioUrl ? "completed" : "failed"}, audioUrl=${audioUrl}`);
+    const updateColumn = internalId ? "id" : "task_id";
+    const updateValue = internalId || taskId;
+
+    console.log(`Updating task by ${updateColumn}=${updateValue}: status=${audioUrl ? "completed" : "failed"}, audioUrl=${audioUrl}`);
 
     const { error: dbError } = await supabase
       .from("music_tasks")
@@ -100,7 +79,7 @@ serve(async (req) => {
         audio_url: audioUrl,
         error_message: errorMessage,
       })
-      .eq("task_id", taskId);
+      .eq(updateColumn, updateValue);
 
     if (dbError) {
       console.error("DB update error:", dbError);

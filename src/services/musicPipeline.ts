@@ -77,7 +77,7 @@ export function pollTaskStatus(
   onUpdate: (status: TaskStatus) => void,
   onError: (error: Error) => void,
   intervalMs = 5000,
-  timeoutMs = 300000
+  timeoutMs = 600000
 ): () => void {
   const startTime = Date.now();
   let stopped = false;
@@ -94,7 +94,7 @@ export function pollTaskStatus(
       const status = await checkTaskStatus(taskId);
       onUpdate(status);
 
-      if (status.status === "processing") {
+      if (status.status === "processing" || status.status === "awaiting_payment") {
         setTimeout(poll, intervalMs);
       }
     } catch (e) {
