@@ -163,36 +163,6 @@ serve(async (req) => {
       });
     }
 
-    // Trigger video image generation in background (non-blocking)
-    if (audioUrl && downloadUrl) {
-      try {
-        // Fetch task data to get childName and theme
-        const { data: taskData } = await supabase
-          .from("music_tasks")
-          .select("child_name, theme")
-          .eq(updateColumn, updateValue)
-          .maybeSingle();
-
-        if (taskData) {
-          console.log(`Triggering video image generation for task ${updateValue}`);
-          // Fire and forget - don't await
-          fetch(`${SUPABASE_URL}/functions/v1/generate-video-images`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-            },
-            body: JSON.stringify({
-              taskId: updateValue,
-              childName: taskData.child_name,
-              theme: taskData.theme,
-            }),
-          }).catch((err) => console.error("Failed to trigger image generation:", err));
-        }
-      } catch (imgTriggerError) {
-        console.error("Error triggering image generation (non-fatal):", imgTriggerError);
-      }
-    }
 
     return new Response(JSON.stringify({ status: "received" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
