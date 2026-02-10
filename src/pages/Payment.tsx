@@ -38,7 +38,7 @@ export default function Payment() {
   const [timeLeft, setTimeLeft] = useState(900);
   const [stopPolling, setStopPolling] = useState<(() => void) | null>(null);
 
-  const pixCode = "00020126580014br.gov.bcb.pix0136a1b2c3d4-e5f6-7890-abcd-ef1234567890520400005303986540529.905802BR5925MUSICA MAGICA PARA CRIA6009SAO PAULO62070503***6304ABCD";
+  const pixCode = "00020126580014br.gov.bcb.pix0136a1b2c3d4-e5f6-7890-abcd-ef1234567890520400005303986540519.905802BR5925MUSICA MAGICA PARA CRIA6009SAO PAULO62070503***6304ABCD";
 
   useEffect(() => {
     const stored = localStorage.getItem("musicData");
@@ -202,7 +202,7 @@ export default function Payment() {
                     MP3 completo + PDF da letra
                   </p>
                   <p className="text-4xl font-baloo font-extrabold text-gradient">
-                    R$ 29,90
+                    R$ 19,90
                   </p>
                 </div>
 
@@ -363,9 +363,9 @@ export default function Payment() {
                     Crie músicas para irmãos, primos ou amigos!
                   </p>
                   <p className="text-2xl font-baloo font-bold text-gradient mb-4">
-                    +2 músicas por apenas R$ 49,90
+                    +2 músicas por apenas R$ 39,90
                     <span className="block text-sm text-muted-foreground line-through">
-                      De R$ 59,80
+                      De R$ 39,80
                     </span>
                   </p>
                   <MagicButton variant="accent" size="md">
