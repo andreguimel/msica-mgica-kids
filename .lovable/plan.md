@@ -1,77 +1,114 @@
 
 
-# Corrigir Timeout: Callback do Kie.ai Nao Atualiza as Tasks
+# Armazenamento e Acesso aos Arquivos de Musica
 
-## Problema Identificado
+## Problema Atual
 
-O banco de dados mostra **4 tasks travadas em "processing"** sem audio_url. O Kie.ai gera a musica com sucesso, mas o callback nao consegue atualizar a task correta no banco.
+- O audio gerado pelo Kie.ai retorna uma URL temporaria que pode expirar a qualquer momento
+- Nao ha armazenamento proprio dos arquivos de audio
+- Se o usuario fechar o navegador, perde o acesso a musica
+- Nao existe nenhum mecanismo de re-acesso ou link de download
 
-**Causa raiz:** A URL de callback enviada ao Kie.ai nao inclui o identificador da task. Quando o Kie.ai chama de volta, a funcao `kie-callback` nao sabe qual task atualizar. O codigo de fallback tenta encontrar uma unica task "processing", mas como ha varias, falha silenciosamente.
+## Solucao Proposta
 
-Alem disso, o polling no frontend tem um timeout de 5 minutos que pode ser insuficiente.
+Armazenar os audios no storage do Lovable Cloud e gerar links de acesso com validade de 30 dias. O usuario recebe um "codigo de acesso" unico por email ou exibido na tela para recuperar suas musicas depois.
 
-## Correcoes
-
-### 1. Incluir taskId na URL de callback (start-music-after-payment)
-
-Alterar a linha do `callBackUrl` para incluir o ID da task como query parameter:
-
-```text
-Antes:  ${SUPABASE_URL}/functions/v1/kie-callback
-Depois: ${SUPABASE_URL}/functions/v1/kie-callback?taskId=${kieTaskId}
-```
-
-Porem, o `kieTaskId` so e conhecido apos a resposta do Kie.ai. Entao precisamos usar o **ID interno da task** (UUID do banco) na URL de callback, e ajustar o `kie-callback` para buscar por esse UUID.
-
-A solucao correta:
+## Arquitetura
 
 ```text
-callBackUrl = ${SUPABASE_URL}/functions/v1/kie-callback?internalId=${taskId}
+Kie.ai gera audio --> Callback recebe URL --> Edge function baixa o arquivo
+--> Salva no Storage (bucket "music-files") --> Gera signed URL (30 dias)
+--> Salva signed URL + expiration no banco
 ```
 
-### 2. Atualizar kie-callback para usar internalId
+## Etapas de Implementacao
 
-Modificar a funcao `kie-callback` para:
-- Ler o parametro `internalId` da query string
-- Buscar a task pelo UUID interno (coluna `id`) ao inves do `task_id` do Kie.ai
-- Isso garante matching correto mesmo com multiplas tasks em processamento
+### 1. Criar bucket de storage "music-files"
 
-### 3. Aumentar timeout do polling
+Criar um bucket privado para armazenar os arquivos de audio com politica RLS permitindo leitura via signed URLs.
 
-Alterar o timeout de 5 minutos (300000ms) para 10 minutos (600000ms) no `musicPipeline.ts`, ja que a geracao pode demorar mais.
+### 2. Adicionar colunas na tabela music_tasks
 
-### 4. Continuar polling no status awaiting_payment
+- `download_url` (text) - URL assinada com validade de 30 dias
+- `download_expires_at` (timestamptz) - data de expiracao do link
+- `access_code` (text, unique) - codigo alfanumerico de 8 caracteres para o usuario recuperar suas musicas (ex: "MAGIC-A3K9")
 
-O polling atual para quando o status nao e "processing". Adicionar "awaiting_payment" como status que tambem continua o polling, evitando condicao de corrida entre o inicio da geracao e a primeira checagem.
+### 3. Atualizar a edge function kie-callback
 
-## Arquivos a Alterar
+Quando o Kie.ai retornar o audio com sucesso:
+1. Baixar o arquivo de audio da URL do Kie.ai
+2. Salvar no bucket "music-files" com nome unico (ex: `{taskId}.mp3`)
+3. Gerar uma signed URL com validade de 30 dias
+4. Gerar um codigo de acesso unico
+5. Salvar `download_url`, `download_expires_at` e `access_code` na task
 
-1. **supabase/functions/start-music-after-payment/index.ts** - Incluir `internalId` na callBackUrl
-2. **supabase/functions/kie-callback/index.ts** - Priorizar busca por `internalId` (UUID) via query param
-3. **src/services/musicPipeline.ts** - Aumentar timeout e continuar polling em "awaiting_payment"
+### 4. Criar edge function "get-my-songs"
+
+Recebe um `access_code` e retorna:
+- Nome da crianca
+- Player de audio (signed URL)
+- Data de expiracao do link
+- Se o link expirou, gera um novo signed URL (renovavel por ate 30 dias apos a criacao)
+
+### 5. Criar pagina /minhas-musicas
+
+Interface simples onde o usuario digita seu codigo de acesso e ve suas musicas:
+- Campo para digitar o codigo (ex: "MAGIC-A3K9")
+- Lista de musicas com player de audio e botao de download
+- Indicacao de "expira em X dias"
+
+### 6. Atualizar pagina de conclusao (Payment.tsx)
+
+Apos a geracao completa, exibir:
+- O codigo de acesso em destaque
+- Instrucao: "Guarde este codigo! Use-o para acessar suas musicas em ate 30 dias"
+- Link para a pagina /minhas-musicas
 
 ## Detalhes Tecnicos
 
-### start-music-after-payment
+### Bucket Storage (migracao SQL)
 
-Alterar a construcao do callBackUrl para:
-```
-const callBackUrl = `${SUPABASE_URL}/functions/v1/kie-callback?internalId=${taskId}`;
-```
-
-O `taskId` aqui e o UUID interno da tabela `music_tasks` (coluna `id`), que ja e recebido no body da requisicao.
-
-### kie-callback
-
-Adicionar leitura do `internalId` da query string:
-```
-const internalId = url.searchParams.get("internalId");
+```text
+- Bucket: music-files (privado)
+- RLS: acesso somente via signed URLs
 ```
 
-Se `internalId` existir, usar `.eq("id", internalId)` para atualizar a task. Caso contrario, manter o fallback atual por `task_id`.
+### Colunas novas em music_tasks
 
-### musicPipeline.ts - pollTaskStatus
+```text
+- download_url: text (nullable)
+- download_expires_at: timestamptz (nullable)
+- access_code: text (nullable, unique)
+```
 
-- Mudar timeoutMs default de 300000 para 600000 (10 min)
-- Na condicao de re-polling, incluir `"awaiting_payment"` alem de `"processing"`
+### kie-callback (alteracoes)
+
+- Usar fetch para baixar o audio da URL do Kie.ai
+- Upload para o bucket via Supabase Storage SDK
+- Gerar signed URL com `createSignedUrl("music-files", path, 2592000)` (30 dias em segundos)
+- Gerar access_code aleatorio de 8 caracteres
+
+### get-my-songs (nova edge function)
+
+- Recebe `{ accessCode: string }`
+- Busca tasks com esse access_code
+- Se download_expires_at passou, gera novo signed URL (se ainda dentro de 30 dias da criacao)
+- Retorna dados da musica
+
+### Pagina /minhas-musicas
+
+- Input estilizado para o codigo de acesso
+- Busca via edge function get-my-songs
+- Exibe player de audio + download + info de expiracao
+- Design consistente com o resto do app
+
+## Arquivos a Criar/Alterar
+
+1. **Migracao SQL** - Bucket + colunas novas
+2. **supabase/functions/kie-callback/index.ts** - Download + storage + signed URL + access code
+3. **supabase/functions/get-my-songs/index.ts** - Nova funcao para recuperar musicas
+4. **src/pages/MyMusic.tsx** - Nova pagina de acesso
+5. **src/pages/Payment.tsx** - Exibir codigo de acesso apos conclusao
+6. **src/App.tsx** - Rota /minhas-musicas
+7. **supabase/config.toml** - Registrar nova funcao
 
