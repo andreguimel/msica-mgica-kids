@@ -11,9 +11,8 @@ const plans = [
     popular: true,
     features: [
       "Música de 1-2 minutos",
-      "Vídeo animado HD",
       "Letra personalizada com o nome",
-      "Download MP3 + MP4 + PDF",
+      "Download MP3 + letra em texto",
       "Link exclusivo por 24h",
       "Suporte via WhatsApp",
     ],
@@ -26,7 +25,7 @@ const plans = [
     popular: false,
     features: [
       "3 músicas personalizadas",
-      "3 vídeos animados HD",
+      "Letras exclusivas para cada",
       "Temas diferentes para cada",
       "Economia de R$9,80",
       "Download completo de todos",

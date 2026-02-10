@@ -56,7 +56,7 @@ export function Hero() {
               className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0"
             >
               Crie uma música única e personalizada com o nome do seu filho! 
-              Vídeo animado, letra educativa e muita diversão. 
+              Letra educativa, melodia alegre e muita diversão. 
               <span className="text-primary font-semibold"> Em apenas 1 minuto!</span>
             </motion.p>
 
@@ -102,7 +102,7 @@ export function Hero() {
             </motion.div>
           </motion.div>
 
-          {/* Imagem/Vídeo Demo */}
+          {/* Imagem Demo */}
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
