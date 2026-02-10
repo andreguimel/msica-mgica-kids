@@ -1,114 +1,109 @@
 
 
-# Armazenamento e Acesso aos Arquivos de Musica
+# Lyric Video + Imagens IA (Opcao Combinada)
 
-## Problema Atual
+## Visao Geral
 
-- O audio gerado pelo Kie.ai retorna uma URL temporaria que pode expirar a qualquer momento
-- Nao ha armazenamento proprio dos arquivos de audio
-- Se o usuario fechar o navegador, perde o acesso a musica
-- Nao existe nenhum mecanismo de re-acesso ou link de download
+Criar um player de video integrado que combina:
+- **Fundo**: Imagens geradas por IA (Nano Banana / gemini-2.5-flash-image) baseadas no tema da crianca
+- **Frente**: Letra da musica aparecendo de forma animada, sincronizada com o audio
 
-## Solucao Proposta
+Tudo processado no **frontend** usando Canvas/HTML, sem custo de video generativo. As imagens sao geradas via Lovable AI (custo minimo, ja incluso).
 
-Armazenar os audios no storage do Lovable Cloud e gerar links de acesso com validade de 30 dias. O usuario recebe um "codigo de acesso" unico por email ou exibido na tela para recuperar suas musicas depois.
-
-## Arquitetura
+## Como Funciona
 
 ```text
-Kie.ai gera audio --> Callback recebe URL --> Edge function baixa o arquivo
---> Salva no Storage (bucket "music-files") --> Gera signed URL (30 dias)
---> Salva signed URL + expiration no banco
+Musica gerada (callback) --> Edge function gera 4-6 imagens do tema
+--> Salva URLs no banco --> Frontend monta o "video player"
+--> Canvas: imagens de fundo em transicao + letra animada por cima
+--> Usuario pode assistir e compartilhar
 ```
+
+## Custo Estimado
+
+- **Imagens IA (Nano Banana)**: 4-6 imagens por musica, custo praticamente zero (ja incluso no Lovable AI)
+- **Video**: Zero - renderizado no frontend com HTML/Canvas
+- **Storage**: Apenas as imagens (~200KB cada) no bucket existente
 
 ## Etapas de Implementacao
 
-### 1. Criar bucket de storage "music-files"
+### 1. Nova Edge Function: generate-video-images
 
-Criar um bucket privado para armazenar os arquivos de audio com politica RLS permitindo leitura via signed URLs.
+Gera 4-6 ilustracoes infantis baseadas no tema e nome da crianca usando o modelo `google/gemini-2.5-flash-image`. Faz upload das imagens para o bucket `music-files` e salva os caminhos no banco.
 
-### 2. Adicionar colunas na tabela music_tasks
+### 2. Atualizar banco de dados
 
-- `download_url` (text) - URL assinada com validade de 30 dias
-- `download_expires_at` (timestamptz) - data de expiracao do link
-- `access_code` (text, unique) - codigo alfanumerico de 8 caracteres para o usuario recuperar suas musicas (ex: "MAGIC-A3K9")
+Adicionar coluna `video_images` (jsonb) na tabela `music_tasks` para armazenar os caminhos das imagens geradas.
 
-### 3. Atualizar a edge function kie-callback
+### 3. Atualizar kie-callback
 
-Quando o Kie.ai retornar o audio com sucesso:
-1. Baixar o arquivo de audio da URL do Kie.ai
-2. Salvar no bucket "music-files" com nome unico (ex: `{taskId}.mp3`)
-3. Gerar uma signed URL com validade de 30 dias
-4. Gerar um codigo de acesso unico
-5. Salvar `download_url`, `download_expires_at` e `access_code` na task
+Apos a musica ser gerada com sucesso, chamar a funcao `generate-video-images` para gerar as ilustracoes automaticamente.
 
-### 4. Criar edge function "get-my-songs"
+### 4. Componente LyricVideoPlayer
 
-Recebe um `access_code` e retorna:
-- Nome da crianca
-- Player de audio (signed URL)
-- Data de expiracao do link
-- Se o link expirou, gera um novo signed URL (renovavel por ate 30 dias apos a criacao)
+Componente React que:
+- Reproduz o audio
+- Exibe imagens de fundo com transicao suave (fade) a cada ~15 segundos
+- Mostra a letra linha por linha com animacao de entrada
+- Calcula a posicao da letra baseada no tempo do audio (divisao uniforme)
+- Controles de play/pause integrados ao visual
 
-### 5. Criar pagina /minhas-musicas
+### 5. Integrar na pagina de conclusao (Payment.tsx)
 
-Interface simples onde o usuario digita seu codigo de acesso e ve suas musicas:
-- Campo para digitar o codigo (ex: "MAGIC-A3K9")
-- Lista de musicas com player de audio e botao de download
-- Indicacao de "expira em X dias"
+Apos a musica estar pronta, exibir o lyric video player alem do player de audio simples.
 
-### 6. Atualizar pagina de conclusao (Payment.tsx)
+### 6. Integrar na pagina Minhas Musicas (MyMusic.tsx)
 
-Apos a geracao completa, exibir:
-- O codigo de acesso em destaque
-- Instrucao: "Guarde este codigo! Use-o para acessar suas musicas em ate 30 dias"
-- Link para a pagina /minhas-musicas
+Exibir o lyric video player tambem quando o usuario recupera suas musicas.
 
 ## Detalhes Tecnicos
 
-### Bucket Storage (migracao SQL)
+### Edge Function generate-video-images
+
+- Recebe: `taskId`, `childName`, `theme`
+- Usa Lovable AI (`google/gemini-2.5-flash-image`) para gerar 4-6 imagens com prompts tipo:
+  - "Cute colorful children's illustration of [childName] playing with [theme elements], whimsical cartoon style, soft pastel colors, no text"
+- Converte base64 para arquivo e faz upload para `music-files/images/{taskId}_1.png`, etc.
+- Gera signed URLs para cada imagem (30 dias)
+- Salva array de URLs no campo `video_images` da task
+
+### Coluna nova em music_tasks
 
 ```text
-- Bucket: music-files (privado)
-- RLS: acesso somente via signed URLs
+video_images: jsonb (nullable, default null)
+-- Armazena array de URLs das imagens: ["url1", "url2", ...]
 ```
 
-### Colunas novas em music_tasks
+### Componente LyricVideoPlayer
 
-```text
-- download_url: text (nullable)
-- download_expires_at: timestamptz (nullable)
-- access_code: text (nullable, unique)
-```
+- Props: `audioUrl`, `lyrics`, `images`, `childName`
+- Usa elemento `<audio>` oculto com `timeupdate` para sincronizar
+- Divide a letra em linhas e distribui uniformemente pelo tempo total do audio
+- Imagens de fundo trocam com fade transition CSS
+- Letra aparece com animacao de opacidade + translateY
+- Overlay semi-transparente escuro para garantir legibilidade da letra
+- Botao play/pause centralizado com visual atraente
+- Responsivo (funciona em mobile)
 
-### kie-callback (alteracoes)
+### Fluxo no kie-callback (atualizado)
 
-- Usar fetch para baixar o audio da URL do Kie.ai
-- Upload para o bucket via Supabase Storage SDK
-- Gerar signed URL com `createSignedUrl("music-files", path, 2592000)` (30 dias em segundos)
-- Gerar access_code aleatorio de 8 caracteres
+Apos salvar o audio com sucesso:
+1. Chama internamente a funcao `generate-video-images` passando taskId, childName, theme
+2. Isso acontece em paralelo (nao bloqueia o retorno do callback)
+3. O frontend faz polling e detecta quando `video_images` esta populado
 
-### get-my-songs (nova edge function)
+### Atualizacao do check-task
 
-- Recebe `{ accessCode: string }`
-- Busca tasks com esse access_code
-- Se download_expires_at passou, gera novo signed URL (se ainda dentro de 30 dias da criacao)
-- Retorna dados da musica
-
-### Pagina /minhas-musicas
-
-- Input estilizado para o codigo de acesso
-- Busca via edge function get-my-songs
-- Exibe player de audio + download + info de expiracao
-- Design consistente com o resto do app
+Retornar tambem o campo `video_images` e `lyrics` para o frontend poder montar o player.
 
 ## Arquivos a Criar/Alterar
 
-1. **Migracao SQL** - Bucket + colunas novas
-2. **supabase/functions/kie-callback/index.ts** - Download + storage + signed URL + access code
-3. **supabase/functions/get-my-songs/index.ts** - Nova funcao para recuperar musicas
-4. **src/pages/MyMusic.tsx** - Nova pagina de acesso
-5. **src/pages/Payment.tsx** - Exibir codigo de acesso apos conclusao
-6. **src/App.tsx** - Rota /minhas-musicas
-7. **supabase/config.toml** - Registrar nova funcao
+1. **Migracao SQL** - Adicionar coluna `video_images` (jsonb)
+2. **supabase/functions/generate-video-images/index.ts** - Nova funcao para gerar imagens
+3. **supabase/functions/kie-callback/index.ts** - Chamar geracao de imagens apos audio pronto
+4. **supabase/functions/check-task/index.ts** - Retornar `video_images`
+5. **src/components/LyricVideoPlayer.tsx** - Novo componente de lyric video
+6. **src/pages/Payment.tsx** - Integrar o player na tela de conclusao
+7. **src/pages/MyMusic.tsx** - Integrar o player na tela de recuperacao
+8. **supabase/config.toml** - Registrar nova funcao
 
