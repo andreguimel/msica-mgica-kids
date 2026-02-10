@@ -24,13 +24,27 @@ import { FloatingElements } from "@/components/ui/FloatingElements";
 import { useToast } from "@/hooks/use-toast";
 import { generateLyricsOnly } from "@/services/musicPipeline";
 
-const themes = [
-  { value: "animais", label: "🐻 Animais", emoji: "🐻" },
-  { value: "princesas", label: "👸 Princesas", emoji: "👸" },
-  { value: "super-herois", label: "🦸 Super-heróis", emoji: "🦸" },
-  { value: "espaco", label: "🚀 Espaço", emoji: "🚀" },
-  { value: "natureza", label: "🌿 Natureza", emoji: "🌿" },
+const genderOptions = [
+  { value: "menino", label: "Menino", emoji: "👦" },
+  { value: "menina", label: "Menina", emoji: "👧" },
 ];
+
+const themesByGender: Record<string, { value: string; label: string; emoji: string }[]> = {
+  menino: [
+    { value: "animais", label: "🐻 Animais", emoji: "🐻" },
+    { value: "super-herois", label: "🦸 Super-heróis", emoji: "🦸" },
+    { value: "espaco", label: "🚀 Espaço", emoji: "🚀" },
+    { value: "dinossauros", label: "🦕 Dinossauros", emoji: "🦕" },
+    { value: "piratas", label: "🏴‍☠️ Piratas", emoji: "🏴‍☠️" },
+  ],
+  menina: [
+    { value: "princesas", label: "👸 Princesas", emoji: "👸" },
+    { value: "unicornios", label: "🦄 Unicórnios", emoji: "🦄" },
+    { value: "fadas", label: "🧚 Fadas", emoji: "🧚" },
+    { value: "animais", label: "🐱 Animais", emoji: "🐱" },
+    { value: "natureza", label: "🌸 Natureza", emoji: "🌸" },
+  ],
+};
 
 const ageGroups = [
   { value: "3-4", label: "3-4 anos" },
@@ -41,6 +55,7 @@ const ageGroups = [
 interface FormData {
   childName: string;
   ageGroup: string;
+  gender: string;
   theme: string;
   specialMessage: string;
 }
@@ -52,6 +67,7 @@ export default function CreateMusic() {
   const [formData, setFormData] = useState<FormData>({
     childName: "",
     ageGroup: "",
+    gender: "",
     theme: "",
     specialMessage: "",
   });
@@ -65,6 +81,10 @@ export default function CreateMusic() {
     }
     if (!formData.ageGroup) {
       toast({ title: "Opa! 🎵", description: "Selecione a faixa etária", variant: "destructive" });
+      return;
+    }
+    if (!formData.gender) {
+      toast({ title: "Opa! 🎵", description: "Selecione menino ou menina", variant: "destructive" });
       return;
     }
     if (!formData.theme) {
@@ -194,34 +214,69 @@ export default function CreateMusic() {
                   </Select>
                 </div>
 
-                {/* Tema */}
+                {/* Gênero */}
                 <div>
                   <label className="flex items-center gap-2 text-sm font-semibold mb-2">
                     <Heart className="w-4 h-4 text-primary" />
-                    Tema favorito *
+                    A música é para: *
                   </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {themes.map((theme) => (
+                  <div className="grid grid-cols-2 gap-3">
+                    {genderOptions.map((g) => (
                       <motion.button
-                        key={theme.value}
+                        key={g.value}
                         type="button"
-                        onClick={() => setFormData({ ...formData, theme: theme.value })}
+                        onClick={() => setFormData({ ...formData, gender: g.value, theme: "" })}
                         className={`p-4 rounded-xl border-2 transition-all ${
-                          formData.theme === theme.value
+                          formData.gender === g.value
                             ? "border-primary bg-primary/10 shadow-pink"
                             : "border-border bg-card hover:border-primary/50"
                         }`}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
-                        <span className="text-2xl block mb-1">{theme.emoji}</span>
-                        <span className="text-sm font-medium">
-                          {theme.label.split(" ")[1]}
-                        </span>
+                        <span className="text-3xl block mb-1">{g.emoji}</span>
+                        <span className="text-sm font-medium">{g.label}</span>
                       </motion.button>
                     ))}
                   </div>
                 </div>
+
+                {/* Tema */}
+                <AnimatePresence>
+                  {formData.gender && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                    >
+                      <label className="flex items-center gap-2 text-sm font-semibold mb-2">
+                        <Sparkles className="w-4 h-4 text-secondary" />
+                        Tema favorito *
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {(themesByGender[formData.gender] || []).map((theme) => (
+                          <motion.button
+                            key={theme.value}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, theme: theme.value })}
+                            className={`p-4 rounded-xl border-2 transition-all ${
+                              formData.theme === theme.value
+                                ? "border-primary bg-primary/10 shadow-pink"
+                                : "border-border bg-card hover:border-primary/50"
+                            }`}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            <span className="text-2xl block mb-1">{theme.emoji}</span>
+                            <span className="text-sm font-medium">
+                              {theme.label.split(" ")[1]}
+                            </span>
+                          </motion.button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Mensagem especial */}
                 <div>
@@ -280,9 +335,9 @@ export default function CreateMusic() {
                     <p className="font-baloo font-bold text-lg text-gradient">
                       "{formData.childName}"
                     </p>
-                    {formData.theme && (
+                    {formData.theme && formData.gender && (
                       <p className="text-sm mt-2">
-                        Tema: <span className="font-semibold">{themes.find((t) => t.value === formData.theme)?.label}</span>
+                        Tema: <span className="font-semibold">{(themesByGender[formData.gender] || []).find((t) => t.value === formData.theme)?.label}</span>
                       </p>
                     )}
                     {formData.ageGroup && (
