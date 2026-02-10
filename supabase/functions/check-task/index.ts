@@ -37,12 +37,12 @@ serve(async (req) => {
     const { data, error } = isUuid
       ? await supabase
           .from("music_tasks")
-          .select("status, audio_url, lyrics, error_message")
+          .select("status, audio_url, lyrics, error_message, access_code, download_url")
           .eq("id", taskId)
           .single()
       : await supabase
           .from("music_tasks")
-          .select("status, audio_url, lyrics, error_message")
+          .select("status, audio_url, lyrics, error_message, access_code, download_url")
           .eq("task_id", taskId)
           .single();
 

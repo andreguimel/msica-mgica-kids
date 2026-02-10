@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import CreateMusic from "./pages/CreateMusic";
 import Preview from "./pages/Preview";
 import Payment from "./pages/Payment";
+import MyMusic from "./pages/MyMusic";
 import NotFound from "./pages/NotFound";
 import { PurchaseNotification } from "./components/ui/PurchaseNotification";
 
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/criar" element={<CreateMusic />} />
           <Route path="/preview" element={<Preview />} />
           <Route path="/pagamento" element={<Payment />} />
+          <Route path="/minhas-musicas" element={<MyMusic />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
