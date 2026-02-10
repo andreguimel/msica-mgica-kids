@@ -35,7 +35,7 @@ serve(async (req) => {
 
     const { data: tasks, error: fetchError } = await supabase
       .from("music_tasks")
-      .select("id, child_name, theme, created_at, download_url, download_expires_at, access_code, status")
+      .select("id, child_name, theme, created_at, download_url, download_expires_at, access_code, status, lyrics, video_images")
       .eq("access_code", normalizedCode)
       .eq("status", "completed");
 
@@ -92,6 +92,8 @@ serve(async (req) => {
         expiresAt: isExpired ? null : expiresAt,
         isExpired,
         createdAt: task.created_at,
+        lyrics: (task as any).lyrics || null,
+        videoImages: (task as any).video_images || [],
       });
     }
 

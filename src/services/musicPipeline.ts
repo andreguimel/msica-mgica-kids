@@ -24,6 +24,7 @@ interface TaskStatus {
   audio_url: string | null;
   lyrics: string | null;
   error_message: string | null;
+  video_images?: string[] | null;
 }
 
 // Step 1: Generate lyrics only (no Kie.ai cost)

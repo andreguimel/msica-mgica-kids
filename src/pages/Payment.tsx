@@ -17,6 +17,7 @@ import { MagicButton } from "@/components/ui/MagicButton";
 import { FloatingElements } from "@/components/ui/FloatingElements";
 import { useToast } from "@/hooks/use-toast";
 import { startMusicAfterPayment, pollTaskStatus } from "@/services/musicPipeline";
+import LyricVideoPlayer from "@/components/LyricVideoPlayer";
 
 interface MusicData {
   childName: string;
@@ -31,6 +32,8 @@ interface TaskStatus {
   error_message?: string;
   access_code?: string;
   download_url?: string;
+  lyrics?: string;
+  video_images?: string[];
 }
 
 interface PackageSong {
@@ -73,6 +76,8 @@ export default function Payment() {
   const [paymentState, setPaymentState] = useState<PaymentState>("pending");
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [accessCode, setAccessCode] = useState<string | null>(null);
+  const [lyrics, setLyrics] = useState<string | null>(null);
+  const [videoImages, setVideoImages] = useState<string[]>([]);
   const [timeLeft, setTimeLeft] = useState(900);
   const [stopPolling, setStopPolling] = useState<(() => void) | null>(null);
 
@@ -154,6 +159,8 @@ export default function Payment() {
           if (status.status === "completed" && status.audio_url) {
             setAudioUrl(status.audio_url);
             setAccessCode((status as any).access_code || null);
+            setLyrics((status as any).lyrics || null);
+            setVideoImages((status as any).video_images || []);
             setPaymentState("completed");
 
             // Save to package songs and decrement remaining
@@ -464,7 +471,18 @@ export default function Payment() {
                   A música de {musicData.childName} foi gerada com sucesso!
                 </p>
 
-                {audioUrl && (
+                {audioUrl && lyrics && videoImages.length > 0 && (
+                  <div className="mb-6">
+                    <LyricVideoPlayer
+                      audioUrl={audioUrl}
+                      lyrics={lyrics}
+                      images={videoImages}
+                      childName={musicData.childName}
+                    />
+                  </div>
+                )}
+
+                {audioUrl && (!lyrics || videoImages.length === 0) && (
                   <div className="bg-muted/50 rounded-2xl p-4 mb-6">
                     <audio controls className="w-full" src={audioUrl}>
                       Seu navegador não suporta o player de áudio.

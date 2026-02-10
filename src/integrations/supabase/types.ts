@@ -29,6 +29,7 @@ export type Database = {
           status: string
           task_id: string | null
           theme: string
+          video_images: Json | null
         }
         Insert: {
           access_code?: string | null
@@ -44,6 +45,7 @@ export type Database = {
           status?: string
           task_id?: string | null
           theme: string
+          video_images?: Json | null
         }
         Update: {
           access_code?: string | null
@@ -59,6 +61,7 @@ export type Database = {
           status?: string
           task_id?: string | null
           theme?: string
+          video_images?: Json | null
         }
         Relationships: []
       }
