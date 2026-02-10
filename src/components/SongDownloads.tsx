@@ -77,12 +77,22 @@ export default function SongDownloads({ childName, audioUrl, lyrics, images = []
   return (
     <div className="space-y-3">
       {/* Audio download */}
-      <a href={audioUrl} download target="_blank" rel="noopener noreferrer">
-        <MagicButton size="lg" className="w-full">
-          <Download className="w-5 h-5" />
-          Baixar música (MP3)
-        </MagicButton>
-      </a>
+      <MagicButton
+        size="lg"
+        className="w-full"
+        onClick={async () => {
+          try {
+            const res = await fetch(audioUrl);
+            const blob = await res.blob();
+            downloadBlob(blob, `${childName} - Música.mp3`);
+          } catch {
+            window.open(audioUrl, "_blank");
+          }
+        }}
+      >
+        <Download className="w-5 h-5" />
+        Baixar música (MP3)
+      </MagicButton>
 
       {/* Lyrics download */}
       {lyrics && (
