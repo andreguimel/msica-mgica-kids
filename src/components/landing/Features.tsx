@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Wand2, Music2, Video, Download, Heart, Shield } from "lucide-react";
+import { Wand2, Music2, FileText, Download, Heart, Shield } from "lucide-react";
 
 const features = [
   {
@@ -15,15 +15,15 @@ const features = [
     color: "bg-secondary/20 text-secondary-foreground",
   },
   {
-    icon: Video,
-    title: "Vídeo Animado",
-    description: "Animações 2D coloridas com a letra na tela, ideal para assistir em família",
+    icon: FileText,
+    title: "Letra Exclusiva",
+    description: "Receba a letra completa para cantar junto com seu pequeno a qualquer momento",
     color: "bg-mint/30 text-mint-foreground",
   },
   {
     icon: Download,
     title: "Download Completo",
-    description: "Receba MP3 da música, MP4 do vídeo HD e PDF com a letra completa",
+    description: "Receba o MP3 da música e a letra completa em arquivo de texto",
     color: "bg-lavender/30 text-lavender-foreground",
   },
   {
