@@ -35,10 +35,6 @@ const faqs = [
     question: "Posso presentear alguém?",
     answer: "Claro! É o presente perfeito para aniversários, datas especiais ou só para fazer uma criança feliz. Você pode enviar o link de download diretamente para a pessoa.",
   },
-  {
-    question: "E se eu não gostar do resultado?",
-    answer: "Oferecemos garantia de satisfação! Se não ficar feliz com a música, entre em contato via WhatsApp em até 7 dias e devolvemos seu dinheiro.",
-  },
 ];
 
 export function FAQ() {
