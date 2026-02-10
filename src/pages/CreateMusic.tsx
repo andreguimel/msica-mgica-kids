@@ -97,11 +97,36 @@ export default function CreateMusic() {
     }
   }, [formData, navigate, toast]);
 
+  const selectedPlan = localStorage.getItem("selectedPlan") || "single";
+  const isPacote = selectedPlan === "pacote";
+  const packageSongsRaw = isPacote ? localStorage.getItem("packageSongs") : null;
+  const packageSongs: { childName: string }[] = packageSongsRaw ? JSON.parse(packageSongsRaw) : [];
+  const packageSongsRemaining = parseInt(localStorage.getItem("packageSongsRemaining") || "0", 10);
+  const isPackageFollowUp = isPacote && packageSongsRemaining > 0;
+
   return (
     <div className="min-h-screen bg-background stars-bg relative overflow-hidden">
       <FloatingElements />
 
       <div className="container-rounded py-8 relative z-10">
+        {/* Package progress */}
+        {isPackageFollowUp && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4"
+          >
+            <div className="card-float bg-primary/5 border border-primary/20 text-center py-3">
+              <p className="text-sm font-medium">
+                🎁 Pacote Encantado — Música {packageSongs.length + 1} de 3
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {packageSongsRemaining} {packageSongsRemaining === 1 ? "música restante" : "músicas restantes"} • Já pago!
+              </p>
+            </div>
+          </motion.div>
+        )}
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
