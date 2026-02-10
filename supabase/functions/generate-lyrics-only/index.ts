@@ -11,8 +11,12 @@ const themeDescriptions: Record<string, string> = {
   animais: "animais fofinhos como coelhos, ursos, passarinhos",
   princesas: "princesas, castelos encantados, magia e bondade",
   "super-herois": "super-heróis, poderes especiais, coragem e aventura",
+  "super-heroinas": "super-heroínas, poderes especiais, coragem e aventura feminina",
   espaco: "espaço sideral, foguetes, estrelas, planetas e aventura cósmica",
   natureza: "natureza, flores, borboletas, arco-íris e jardins encantados",
+  dinossauros: "dinossauros, aventuras pré-históricas, fósseis e rugidos divertidos",
+  futebol: "futebol, gols, jogadas incríveis, torcida e alegria no campo",
+  fadas: "fadas encantadas, varinhas mágicas, jardins secretos e pó de estrela",
 };
 
 serve(async (req) => {

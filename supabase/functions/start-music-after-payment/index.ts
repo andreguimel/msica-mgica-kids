@@ -11,8 +11,12 @@ const themeStyles: Record<string, string> = {
   animais: "children's music, cheerful, playful, happy, cute, acoustic guitar, ukulele, bright, fun, singalong",
   princesas: "children's music, cheerful, happy, magical, fairy tale, gentle, harp, flute, joyful, bright",
   "super-herois": "children's music, cheerful, happy, heroic, energetic, upbeat, drums, brass, fun, exciting",
+  "super-heroinas": "children's music, cheerful, happy, heroic, energetic, upbeat, girl power, fun, exciting",
   espaco: "children's music, cheerful, happy, cosmic, wonder, synth, playful, bright, adventure, fun",
   natureza: "children's music, cheerful, happy, peaceful, folk, acoustic, joyful, bright, singalong, fun",
+  dinossauros: "children's music, cheerful, happy, adventurous, playful, stomping beats, fun, exciting",
+  futebol: "children's music, cheerful, happy, energetic, stadium chant, upbeat, clapping, whistles, fun",
+  fadas: "children's music, cheerful, happy, magical, ethereal, gentle, harp, bells, whimsical, bright",
 };
 
 serve(async (req) => {
