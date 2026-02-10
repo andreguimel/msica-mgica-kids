@@ -195,7 +195,7 @@ export default function Preview() {
             <div className="card-float bg-gradient-to-br from-primary/10 via-lavender/10 to-secondary/10 border-2 border-primary/30">
               <div className="text-center mb-4">
                 <p className="text-sm text-muted-foreground">Preço especial por tempo limitado</p>
-                <p className="text-4xl font-baloo font-extrabold text-gradient">R$ 29,90</p>
+                <p className="text-4xl font-baloo font-extrabold text-gradient">R$ 19,90</p>
                 <p className="text-xs text-muted-foreground">Pagamento único via Pix</p>
               </div>
 
