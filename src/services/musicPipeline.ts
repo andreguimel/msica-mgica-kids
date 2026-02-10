@@ -62,7 +62,7 @@ export function pollTaskStatus(
   onUpdate: (status: TaskStatus) => void,
   onError: (error: Error) => void,
   intervalMs = 5000,
-  timeoutMs = 180000
+  timeoutMs = 300000
 ): () => void {
   const startTime = Date.now();
   let stopped = false;

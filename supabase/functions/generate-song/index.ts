@@ -106,11 +106,12 @@ ${specialMessage ? `- Incorpore naturalmente esta mensagem especial: "${specialM
     console.log("Lyrics generated successfully, length:", lyrics.length);
 
     // Step 2: Send to Kie.ai (Suno API)
-    const callBackUrl = `${SUPABASE_URL}/functions/v1/kie-callback`;
+    // taskId will be appended after we get it from Kie.ai response
+    const baseCallBackUrl = `${SUPABASE_URL}/functions/v1/kie-callback`;
     const style = themeStyles[theme] || themeStyles.animais;
     const title = `${childName}`;
 
-    console.log("Sending to Kie.ai with callBackUrl:", callBackUrl);
+    console.log("Sending to Kie.ai...");
 
     const kieResponse = await fetch("https://api.kie.ai/api/v1/generate", {
       method: "POST",
@@ -123,7 +124,7 @@ ${specialMessage ? `- Incorpore naturalmente esta mensagem especial: "${specialM
         customMode: true,
         instrumental: false,
         model: "V4",
-        callBackUrl,
+        callBackUrl: baseCallBackUrl,
         style,
         title,
       }),

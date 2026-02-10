@@ -25,9 +25,44 @@ serve(async (req) => {
     const payload = await req.json();
     console.log("Kie.ai callback received:", JSON.stringify(payload).substring(0, 1000));
 
-    // Extract data from callback
-    // Kie.ai sends: { code, msg, data: { taskId, callbackType, data: [{ audio_url, ... }] } }
-    const taskId = payload.data?.taskId;
+    // Try to get taskId from query params first, then from payload
+    const url = new URL(req.url);
+    let taskId = url.searchParams.get("taskId") || payload.data?.taskId;
+    
+    // If still no taskId, try to find it by matching the song ID in our database
+    if (!taskId) {
+      const songs = payload.data?.data;
+      if (Array.isArray(songs) && songs.length > 0) {
+        const songId = songs[0].id;
+        if (songId) {
+          console.log("No taskId in payload, looking up by song content...");
+          // Try to find the task by checking recent processing tasks
+          const { data: tasks } = await supabase
+            .from("music_tasks")
+            .select("task_id")
+            .eq("status", "processing")
+            .order("created_at", { ascending: false })
+            .limit(5);
+          
+          if (tasks && tasks.length === 1) {
+            taskId = tasks[0].task_id;
+            console.log("Found single processing task:", taskId);
+          } else {
+            console.log("Multiple or no processing tasks found, cannot auto-match");
+          }
+        }
+      }
+    }
+
+    // Skip intermediate callbacks (text, first) - only process "complete"
+    const callbackType = payload.data?.callbackType;
+    if (callbackType && callbackType !== "complete") {
+      console.log(`Skipping intermediate callback type: ${callbackType}`);
+      return new Response(JSON.stringify({ status: "skipped", callbackType }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const status = payload.code === 200 ? "completed" : "failed";
 
     if (!taskId) {
