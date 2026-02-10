@@ -9,7 +9,7 @@ import {
 const faqs = [
   {
     question: "Quanto tempo leva para criar a música?",
-    answer: "A magia acontece em menos de 1 minuto! Nossa IA avançada gera a letra e a música personalizada rapidamente. Você pode pré-visualizar antes de comprar.",
+    answer: "A magia acontece em menos de 2 minutos! Nossa IA avançada gera a letra e a música personalizada rapidamente. Você pode pré-visualizar a letra antes de comprar.",
   },
   {
     question: "Posso escolher o estilo da música?",
@@ -17,23 +17,27 @@ const faqs = [
   },
   {
     question: "A música tem o nome da criança?",
-    answer: "Com certeza! O nome da criança aparece na letra da música e é cantado várias vezes. Uma experiência totalmente personalizada!",
+    answer: "Com certeza! O nome da criança aparece na letra e é cantado várias vezes ao longo da música. Uma experiência totalmente personalizada!",
+  },
+  {
+    question: "O que eu recebo após o pagamento?",
+    answer: "Você recebe o MP3 da música completa e a letra em arquivo de texto, prontos para download. Tudo disponível instantaneamente após a confirmação do pagamento.",
+  },
+  {
+    question: "Por quanto tempo posso acessar minha música?",
+    answer: "O link de download fica ativo por 30 dias, e você pode baixar quantas vezes precisar nesse período. Recomendamos salvar em local seguro!",
   },
   {
     question: "Como funciona o pagamento?",
-    answer: "Aceitamos Pix para pagamento instantâneo. Assim que confirmado, você recebe o link de download por e-mail e na tela. O link fica disponível por 24 horas.",
+    answer: "Aceitamos Pix para pagamento instantâneo. Assim que confirmado, você recebe um código de acesso exclusivo para baixar sua música a qualquer momento dentro de 30 dias.",
   },
   {
-    question: "Posso baixar quantas vezes quiser?",
-    answer: "O link de download fica ativo por 24 horas, e você pode baixar quantas vezes precisar nesse período. Recomendamos salvar em local seguro!",
-  },
-  {
-    question: "É seguro para crianças assistirem?",
-    answer: "100% seguro! Todo conteúdo é gerado com temas positivos, educativos e apropriados para crianças de 3 a 8 anos. Sem anúncios ou conteúdo inadequado.",
+    question: "É seguro para crianças ouvirem?",
+    answer: "100% seguro! Todo conteúdo é gerado com temas positivos, educativos e apropriados para crianças. Sem anúncios ou conteúdo inadequado.",
   },
   {
     question: "Posso presentear alguém?",
-    answer: "Claro! É o presente perfeito para aniversários, datas especiais ou só para fazer uma criança feliz. Você pode enviar o link de download diretamente para a pessoa.",
+    answer: "Claro! É o presente perfeito para aniversários, datas especiais ou só para fazer uma criança feliz. Basta compartilhar o código de acesso com a pessoa.",
   },
 ];
 
