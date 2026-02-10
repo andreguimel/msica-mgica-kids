@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -16,7 +16,7 @@ import {
 import { MagicButton } from "@/components/ui/MagicButton";
 import { FloatingElements } from "@/components/ui/FloatingElements";
 import { useToast } from "@/hooks/use-toast";
-import { startMusicAfterPayment, pollTaskStatus } from "@/services/musicPipeline";
+import { startMusicAfterPayment, pollTaskStatus, checkTaskStatus } from "@/services/musicPipeline";
 import LyricVideoPlayer from "@/components/LyricVideoPlayer";
 
 interface MusicData {
@@ -112,10 +112,39 @@ export default function Payment() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPackageSong, taskId, paymentState]);
 
+  const imagePollingRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Poll for video_images after music is completed
+  const startImagePolling = useCallback((tid: string) => {
+    let attempts = 0;
+    const maxAttempts = 24; // ~2 minutes at 5s intervals
+
+    const poll = async () => {
+      attempts++;
+      if (attempts > maxAttempts) return;
+
+      try {
+        const status = await checkTaskStatus(tid);
+        const images = (status as any).video_images || [];
+        if (images.length > 0) {
+          setVideoImages(images);
+          return;
+        }
+      } catch {
+        // ignore
+      }
+
+      imagePollingRef.current = setTimeout(poll, 5000);
+    };
+
+    imagePollingRef.current = setTimeout(poll, 5000);
+  }, []);
+
   // Cleanup polling on unmount
   useEffect(() => {
     return () => {
       stopPolling?.();
+      if (imagePollingRef.current) clearTimeout(imagePollingRef.current);
     };
   }, [stopPolling]);
 
@@ -160,8 +189,14 @@ export default function Payment() {
             setAudioUrl(status.audio_url);
             setAccessCode((status as any).access_code || null);
             setLyrics((status as any).lyrics || null);
-            setVideoImages((status as any).video_images || []);
+            const images = (status as any).video_images || [];
+            setVideoImages(images);
             setPaymentState("completed");
+
+            // If images not ready yet, start polling for them
+            if (images.length === 0) {
+              startImagePolling(taskId!);
+            }
 
             // Save to package songs and decrement remaining
             if (isPacote) {
