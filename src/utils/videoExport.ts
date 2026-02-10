@@ -188,8 +188,8 @@ export async function exportVideo(options: VideoExportOptions): Promise<Blob> {
   });
 
   const duration = audio.duration;
-  const introRatio = 0.12;
-  const outroRatio = 0.08;
+  const introRatio = 0.05;
+  const outroRatio = 0.05;
   const lyricsStart = duration * introRatio;
   const lyricsEnd = duration * (1 - outroRatio);
   const lyricsDuration = lyricsEnd - lyricsStart;
