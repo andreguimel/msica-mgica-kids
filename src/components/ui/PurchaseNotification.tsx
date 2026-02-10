@@ -50,17 +50,11 @@ export function PurchaseNotification() {
       setTimeout(() => setVisible(false), 4000);
     };
 
-    // First notification after 8-15 seconds
-    const initialDelay = 8000 + Math.random() * 7000;
-    const initialTimer = setTimeout(() => {
-      showNotification();
-    }, initialDelay);
+    // First notification after 3-5 seconds
+    const initialTimer = setTimeout(showNotification, 3000 + Math.random() * 2000);
 
-    // Then every 15-30 seconds
-    const interval = setInterval(() => {
-      const delay = Math.random() * 15000;
-      setTimeout(showNotification, delay);
-    }, 25000);
+    // Then every 7 seconds
+    const interval = setInterval(showNotification, 7000);
 
     return () => {
       clearTimeout(initialTimer);
