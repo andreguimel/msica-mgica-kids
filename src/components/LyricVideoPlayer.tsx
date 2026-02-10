@@ -22,6 +22,13 @@ export default function LyricVideoPlayer({ audioUrl, lyrics, images, childName }
     .map((l) => l.trim())
     .filter((l) => l.length > 0);
 
+  // Offset: skip intro (~12%) and outro (~8%) of the song for better vocal sync
+  const introRatio = 0.12;
+  const outroRatio = 0.08;
+  const lyricsStart = duration * introRatio;
+  const lyricsEnd = duration * (1 - outroRatio);
+  const lyricsDuration = lyricsEnd - lyricsStart;
+
   const imageInterval = duration > 0 && images.length > 0 ? duration / images.length : 15;
 
   // Update current image based on time
@@ -31,13 +38,18 @@ export default function LyricVideoPlayer({ audioUrl, lyrics, images, childName }
     setCurrentImageIndex(idx);
   }, [currentTime, imageInterval, images.length, duration]);
 
-  // Update current lyric line based on time
+  // Update current lyric line based on time (with intro/outro offset)
   useEffect(() => {
-    if (duration <= 0 || lines.length === 0) return;
-    const lineInterval = duration / lines.length;
-    const idx = Math.floor(currentTime / lineInterval);
+    if (duration <= 0 || lines.length === 0 || lyricsDuration <= 0) return;
+    const elapsed = currentTime - lyricsStart;
+    if (elapsed < 0) {
+      setCurrentLineIndex(-1);
+      return;
+    }
+    const lineInterval = lyricsDuration / lines.length;
+    const idx = Math.floor(elapsed / lineInterval);
     setCurrentLineIndex(Math.min(idx, lines.length - 1));
-  }, [currentTime, duration, lines.length]);
+  }, [currentTime, duration, lines.length, lyricsStart, lyricsDuration]);
 
   const handleTimeUpdate = useCallback(() => {
     if (audioRef.current) {

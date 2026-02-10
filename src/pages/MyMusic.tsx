@@ -7,6 +7,7 @@ import { FloatingElements } from "@/components/ui/FloatingElements";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import LyricVideoPlayer from "@/components/LyricVideoPlayer";
+import SongDownloads from "@/components/SongDownloads";
 
 interface Song {
   id: string;
@@ -198,12 +199,12 @@ export default function MyMusic() {
                             </audio>
                           </div>
                         )}
-                        <a href={song.audioUrl} download target="_blank" rel="noopener noreferrer">
-                          <MagicButton size="sm" className="w-full">
-                            <Download className="w-4 h-4" />
-                            Baixar MP3
-                          </MagicButton>
-                        </a>
+                        <SongDownloads
+                          childName={song.childName}
+                          audioUrl={song.audioUrl}
+                          lyrics={song.lyrics}
+                          images={song.videoImages}
+                        />
                       </>
                     ) : null}
                   </motion.div>

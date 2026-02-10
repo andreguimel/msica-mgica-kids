@@ -18,6 +18,7 @@ import { FloatingElements } from "@/components/ui/FloatingElements";
 import { useToast } from "@/hooks/use-toast";
 import { startMusicAfterPayment, pollTaskStatus, checkTaskStatus } from "@/services/musicPipeline";
 import LyricVideoPlayer from "@/components/LyricVideoPlayer";
+import SongDownloads from "@/components/SongDownloads";
 
 interface MusicData {
   childName: string;
@@ -527,12 +528,12 @@ export default function Payment() {
 
                 <div className="space-y-4">
                   {audioUrl && (
-                    <a href={audioUrl} download target="_blank" rel="noopener noreferrer">
-                      <MagicButton size="lg" className="w-full">
-                        <Download className="w-5 h-5" />
-                        Baixar música (MP3)
-                      </MagicButton>
-                    </a>
+                    <SongDownloads
+                      childName={musicData.childName}
+                      audioUrl={audioUrl}
+                      lyrics={lyrics}
+                      images={videoImages}
+                    />
                   )}
 
                   {accessCode && (
