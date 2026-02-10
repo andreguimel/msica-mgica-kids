@@ -35,11 +35,11 @@ const themesByGender: Record<string, { value: string; label: string; emoji: stri
     { value: "super-herois", label: "🦸 Super-heróis", emoji: "🦸" },
     { value: "espaco", label: "🚀 Espaço", emoji: "🚀" },
     { value: "dinossauros", label: "🦕 Dinossauros", emoji: "🦕" },
-    { value: "piratas", label: "🏴‍☠️ Piratas", emoji: "🏴‍☠️" },
+    { value: "futebol", label: "⚽ Futebol", emoji: "⚽" },
   ],
   menina: [
     { value: "princesas", label: "👸 Princesas", emoji: "👸" },
-    { value: "unicornios", label: "🦄 Unicórnios", emoji: "🦄" },
+    { value: "super-heroinas", label: "🦸‍♀️ Super-heroínas", emoji: "🦸‍♀️" },
     { value: "fadas", label: "🧚 Fadas", emoji: "🧚" },
     { value: "animais", label: "🐱 Animais", emoji: "🐱" },
     { value: "natureza", label: "🌸 Natureza", emoji: "🌸" },
