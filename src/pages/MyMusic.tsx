@@ -6,7 +6,6 @@ import { MagicButton } from "@/components/ui/MagicButton";
 import { FloatingElements } from "@/components/ui/FloatingElements";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import LyricVideoPlayer from "@/components/LyricVideoPlayer";
 import SongDownloads from "@/components/SongDownloads";
 
 interface Song {
@@ -18,7 +17,6 @@ interface Song {
   isExpired: boolean;
   createdAt: string;
   lyrics: string | null;
-  videoImages: string[];
 }
 
 export default function MyMusic() {
@@ -183,26 +181,15 @@ export default function MyMusic() {
                       </div>
                     ) : song.audioUrl ? (
                       <>
-                        {song.videoImages.length > 0 ? (
-                          <div className="mb-3">
-                            <LyricVideoPlayer
-                              audioUrl={song.audioUrl}
-                              images={song.videoImages}
-                              childName={song.childName}
-                            />
-                          </div>
-                        ) : (
-                          <div className="bg-muted/50 rounded-2xl p-3 mb-3">
-                            <audio controls className="w-full" src={song.audioUrl}>
-                              Seu navegador não suporta o player de áudio.
-                            </audio>
-                          </div>
-                        )}
+                        <div className="bg-muted/50 rounded-2xl p-3 mb-3">
+                          <audio controls className="w-full" src={song.audioUrl}>
+                            Seu navegador não suporta o player de áudio.
+                          </audio>
+                        </div>
                         <SongDownloads
                           childName={song.childName}
                           audioUrl={song.audioUrl}
                           lyrics={song.lyrics}
-                          images={song.videoImages}
                         />
                       </>
                     ) : null}

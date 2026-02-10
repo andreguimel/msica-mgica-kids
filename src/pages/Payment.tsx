@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -16,8 +16,7 @@ import {
 import { MagicButton } from "@/components/ui/MagicButton";
 import { FloatingElements } from "@/components/ui/FloatingElements";
 import { useToast } from "@/hooks/use-toast";
-import { startMusicAfterPayment, pollTaskStatus, checkTaskStatus } from "@/services/musicPipeline";
-import LyricVideoPlayer from "@/components/LyricVideoPlayer";
+import { startMusicAfterPayment, pollTaskStatus } from "@/services/musicPipeline";
 import SongDownloads from "@/components/SongDownloads";
 
 interface MusicData {
@@ -34,7 +33,6 @@ interface TaskStatus {
   access_code?: string;
   download_url?: string;
   lyrics?: string;
-  video_images?: string[];
 }
 
 interface PackageSong {
@@ -78,7 +76,6 @@ export default function Payment() {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [accessCode, setAccessCode] = useState<string | null>(null);
   const [lyrics, setLyrics] = useState<string | null>(null);
-  const [videoImages, setVideoImages] = useState<string[]>([]);
   const [timeLeft, setTimeLeft] = useState(900);
   const [stopPolling, setStopPolling] = useState<(() => void) | null>(null);
 
@@ -113,39 +110,10 @@ export default function Payment() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPackageSong, taskId, paymentState]);
 
-  const imagePollingRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Poll for video_images after music is completed
-  const startImagePolling = useCallback((tid: string) => {
-    let attempts = 0;
-    const maxAttempts = 24; // ~2 minutes at 5s intervals
-
-    const poll = async () => {
-      attempts++;
-      if (attempts > maxAttempts) return;
-
-      try {
-        const status = await checkTaskStatus(tid);
-        const images = (status as any).video_images || [];
-        if (images.length > 0) {
-          setVideoImages(images);
-          return;
-        }
-      } catch {
-        // ignore
-      }
-
-      imagePollingRef.current = setTimeout(poll, 5000);
-    };
-
-    imagePollingRef.current = setTimeout(poll, 5000);
-  }, []);
-
   // Cleanup polling on unmount
   useEffect(() => {
     return () => {
       stopPolling?.();
-      if (imagePollingRef.current) clearTimeout(imagePollingRef.current);
     };
   }, [stopPolling]);
 
@@ -190,14 +158,7 @@ export default function Payment() {
             setAudioUrl(status.audio_url);
             setAccessCode((status as any).access_code || null);
             setLyrics((status as any).lyrics || null);
-            const images = (status as any).video_images || [];
-            setVideoImages(images);
             setPaymentState("completed");
-
-            // If images not ready yet, start polling for them
-            if (images.length === 0) {
-              startImagePolling(taskId!);
-            }
 
             // Save to package songs and decrement remaining
             if (isPacote) {
@@ -507,17 +468,7 @@ export default function Payment() {
                   A música de {musicData.childName} foi gerada com sucesso!
                 </p>
 
-                {audioUrl && videoImages.length > 0 && (
-                  <div className="mb-6">
-                    <LyricVideoPlayer
-                      audioUrl={audioUrl}
-                      images={videoImages}
-                      childName={musicData.childName}
-                    />
-                  </div>
-                )}
-
-                {audioUrl && videoImages.length === 0 && (
+                {audioUrl && (
                   <div className="bg-muted/50 rounded-2xl p-4 mb-6">
                     <audio controls className="w-full" src={audioUrl}>
                       Seu navegador não suporta o player de áudio.
@@ -531,7 +482,6 @@ export default function Payment() {
                       childName={musicData.childName}
                       audioUrl={audioUrl}
                       lyrics={lyrics}
-                      images={videoImages}
                     />
                   )}
 
