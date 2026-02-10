@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Sparkles, Music, Play } from "lucide-react";
+import { Sparkles, Music, Play, Pause } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { FloatingElements } from "@/components/ui/FloatingElements";
 import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
@@ -102,38 +102,87 @@ export function Hero() {
             </motion.div>
           </motion.div>
 
-          {/* Imagem Demo */}
+          {/* Mockup Player de Música */}
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.3 }}
             className="relative"
           >
-            <div className="relative rounded-4xl overflow-hidden shadow-magic animate-float">
-              {/* Imagem principal */}
-              <img
-                src={heroImage}
-                alt="Animais tocando música"
-                className="w-full h-auto"
-              />
-              
-              {/* Overlay com botão de play */}
-              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-foreground/20 to-transparent">
-                <motion.button
-                  className="w-20 h-20 bg-primary rounded-full flex items-center justify-center shadow-magic"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  animate={{ 
-                    boxShadow: [
-                      "0 0 20px hsl(350 80% 70% / 0.4)",
-                      "0 0 40px hsl(350 80% 70% / 0.6)",
-                      "0 0 20px hsl(350 80% 70% / 0.4)",
-                    ]
-                  }}
-                  transition={{ duration: 2, repeat: Infinity }}
+            <div className="relative rounded-4xl overflow-hidden shadow-magic animate-float bg-card border border-border p-6">
+              {/* Imagem de capa */}
+              <div className="relative rounded-3xl overflow-hidden mb-5">
+                <img
+                  src={heroImage}
+                  alt="Animais tocando música"
+                  className="w-full h-auto"
+                />
+                {/* Notas musicais animadas */}
+                <motion.span
+                  className="absolute top-4 right-4 text-3xl"
+                  animate={{ y: [0, -12, 0], rotate: [0, 15, -15, 0] }}
+                  transition={{ duration: 2.5, repeat: Infinity }}
                 >
-                  <Play className="w-8 h-8 text-primary-foreground ml-1" fill="currentColor" />
-                </motion.button>
+                  🎵
+                </motion.span>
+                <motion.span
+                  className="absolute bottom-6 left-4 text-2xl"
+                  animate={{ y: [0, -8, 0], rotate: [0, -10, 10, 0] }}
+                  transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}
+                >
+                  🎶
+                </motion.span>
+              </div>
+
+              {/* Info da música */}
+              <div className="text-center mb-4">
+                <h3 className="font-baloo font-bold text-lg text-foreground">
+                  ✨ Música da Sofia ✨
+                </h3>
+                <p className="text-sm text-muted-foreground">Tema: Animais da Floresta</p>
+              </div>
+
+              {/* Barra de progresso animada */}
+              <div className="mb-3">
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-primary rounded-full"
+                    initial={{ width: "0%" }}
+                    animate={{ width: "65%" }}
+                    transition={{ duration: 3, delay: 1, ease: "easeOut" }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                  <span>0:58</span>
+                  <span>1:32</span>
+                </div>
+              </div>
+
+              {/* Controles */}
+              <div className="flex items-center justify-center gap-6">
+                <motion.div
+                  className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-lg cursor-pointer"
+                  animate={{ scale: [1, 1.08, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  <Pause className="w-5 h-5" />
+                </motion.div>
+              </div>
+
+              {/* Ondas sonoras animadas */}
+              <div className="flex items-end justify-center gap-1 mt-4 h-6">
+                {[0.6, 1, 0.4, 0.8, 0.5, 1, 0.7, 0.3, 0.9, 0.5, 0.8, 0.6].map((h, i) => (
+                  <motion.div
+                    key={i}
+                    className="w-1.5 bg-primary/60 rounded-full"
+                    animate={{ height: [`${h * 24}px`, `${h * 8}px`, `${h * 24}px`] }}
+                    transition={{
+                      duration: 0.8 + Math.random() * 0.4,
+                      repeat: Infinity,
+                      delay: i * 0.08,
+                    }}
+                  />
+                ))}
               </div>
             </div>
 
