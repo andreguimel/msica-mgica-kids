@@ -1,72 +1,40 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Pause, Music } from "lucide-react";
+import { Play, Pause, Music, ChevronLeft, ChevronRight } from "lucide-react";
 
-interface LyricVideoPlayerProps {
+interface AudioPlayerProps {
   audioUrl: string;
-  lyrics: string;
   images: string[];
   childName: string;
 }
 
-export default function LyricVideoPlayer({ audioUrl, lyrics, images, childName }: LyricVideoPlayerProps) {
+export default function AudioImagePlayer({ audioUrl, images, childName }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [currentLineIndex, setCurrentLineIndex] = useState(-1);
-
-  const lines = lyrics
-    .split("\n")
-    .map((l) => l.trim())
-    .filter((l) => l.length > 0);
-
-  // Offset: skip intro (~12%) and outro (~8%) of the song for better vocal sync
-  const introRatio = 0.05;
-  const outroRatio = 0.05;
-  const lyricsStart = duration * introRatio;
-  const lyricsEnd = duration * (1 - outroRatio);
-  const lyricsDuration = lyricsEnd - lyricsStart;
 
   const imageInterval = duration > 0 && images.length > 0 ? duration / images.length : 15;
 
-  // Update current image based on time
+  // Auto-advance image based on audio time
   useEffect(() => {
     if (duration <= 0 || images.length === 0) return;
     const idx = Math.min(Math.floor(currentTime / imageInterval), images.length - 1);
     setCurrentImageIndex(idx);
   }, [currentTime, imageInterval, images.length, duration]);
 
-  // Update current lyric line based on time (with intro/outro offset)
-  useEffect(() => {
-    if (duration <= 0 || lines.length === 0 || lyricsDuration <= 0) return;
-    const elapsed = currentTime - lyricsStart;
-    if (elapsed < 0) {
-      setCurrentLineIndex(-1);
-      return;
-    }
-    const lineInterval = lyricsDuration / lines.length;
-    const idx = Math.floor(elapsed / lineInterval);
-    setCurrentLineIndex(Math.min(idx, lines.length - 1));
-  }, [currentTime, duration, lines.length, lyricsStart, lyricsDuration]);
-
   const handleTimeUpdate = useCallback(() => {
-    if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
-    }
+    if (audioRef.current) setCurrentTime(audioRef.current.currentTime);
   }, []);
 
   const handleLoadedMetadata = useCallback(() => {
-    if (audioRef.current) {
-      setDuration(audioRef.current.duration);
-    }
+    if (audioRef.current) setDuration(audioRef.current.duration);
   }, []);
 
   const handleEnded = useCallback(() => {
     setIsPlaying(false);
     setCurrentTime(0);
-    setCurrentLineIndex(-1);
     setCurrentImageIndex(0);
   }, []);
 
@@ -81,16 +49,19 @@ export default function LyricVideoPlayer({ audioUrl, lyrics, images, childName }
     }
   };
 
-  // Visible lines: show current and 2 previous for context
-  const visibleLineStart = Math.max(0, currentLineIndex - 2);
-  const visibleLineEnd = Math.min(lines.length - 1, currentLineIndex + 2);
-  const visibleLines = lines.slice(visibleLineStart, visibleLineEnd + 1);
+  const goToImage = (direction: -1 | 1) => {
+    setCurrentImageIndex((prev) => {
+      const next = prev + direction;
+      if (next < 0) return images.length - 1;
+      if (next >= images.length) return 0;
+      return next;
+    });
+  };
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
     <div className="relative w-full rounded-3xl overflow-hidden shadow-[var(--shadow-soft)] aspect-video bg-foreground/90">
-      {/* Hidden audio element */}
       <audio
         ref={audioRef}
         src={audioUrl}
@@ -100,56 +71,30 @@ export default function LyricVideoPlayer({ audioUrl, lyrics, images, childName }
         preload="metadata"
       />
 
-      {/* Background images with fade transition */}
+      {/* Background images with fade */}
       <div className="absolute inset-0">
-        {images.map((img, i) => (
-          <img
-            key={i}
-            src={img}
-            alt={`Ilustração ${i + 1} para ${childName}`}
-            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000"
-            style={{ opacity: i === currentImageIndex ? 1 : 0 }}
-            loading={i === 0 ? "eager" : "lazy"}
-          />
-        ))}
-        {/* Fallback if no images loaded yet */}
-        {images.length === 0 && (
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-secondary/30 flex items-center justify-center">
-            <Music className="w-16 h-16 text-primary-foreground/50" />
-          </div>
-        )}
-      </div>
-
-      {/* Dark overlay for readability */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
-
-      {/* Lyrics overlay */}
-      <div className="absolute inset-0 flex flex-col items-center justify-end pb-16 px-4 md:px-8">
-        <AnimatePresence mode="popLayout">
-          {visibleLines.map((line, i) => {
-            const globalIndex = visibleLineStart + i;
-            const isCurrent = globalIndex === currentLineIndex;
-            return (
-              <motion.p
-                key={`${globalIndex}-${line}`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{
-                  opacity: isCurrent ? 1 : 0.4,
-                  y: 0,
-                  scale: isCurrent ? 1 : 0.9,
-                }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4 }}
-                className={`text-center font-baloo font-bold text-white drop-shadow-lg ${
-                  isCurrent ? "text-lg md:text-2xl" : "text-sm md:text-base"
-                }`}
-              >
-                {line}
-              </motion.p>
-            );
-          })}
+        <AnimatePresence mode="wait">
+          {images.length > 0 ? (
+            <motion.img
+              key={currentImageIndex}
+              src={images[currentImageIndex]}
+              alt={`Ilustração ${currentImageIndex + 1} para ${childName}`}
+              className="absolute inset-0 w-full h-full object-cover"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.8 }}
+            />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-secondary/30 flex items-center justify-center">
+              <Music className="w-16 h-16 text-primary-foreground/50" />
+            </div>
+          )}
         </AnimatePresence>
       </div>
+
+      {/* Subtle vignette */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle,transparent_40%,rgba(0,0,0,0.25)_100%)]" />
 
       {/* Play/Pause button */}
       <button
@@ -163,12 +108,45 @@ export default function LyricVideoPlayer({ audioUrl, lyrics, images, childName }
         )}
       </button>
 
+      {/* Image navigation arrows */}
+      {images.length > 1 && !isPlaying && (
+        <>
+          <button
+            onClick={() => goToImage(-1)}
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => goToImage(1)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </>
+      )}
+
       {/* Child name badge */}
       <div className="absolute top-4 left-4">
         <div className="bg-white/20 backdrop-blur-md rounded-full px-4 py-1.5 text-white text-sm font-bold">
           🎵 {childName}
         </div>
       </div>
+
+      {/* Image dots */}
+      {images.length > 1 && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5">
+          {images.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentImageIndex(i)}
+              className={`w-2 h-2 rounded-full transition-all ${
+                i === currentImageIndex ? "bg-white scale-125" : "bg-white/40"
+              }`}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Progress bar */}
       <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-white/20">

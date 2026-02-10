@@ -507,18 +507,17 @@ export default function Payment() {
                   A música de {musicData.childName} foi gerada com sucesso!
                 </p>
 
-                {audioUrl && lyrics && videoImages.length > 0 && (
+                {audioUrl && videoImages.length > 0 && (
                   <div className="mb-6">
                     <LyricVideoPlayer
                       audioUrl={audioUrl}
-                      lyrics={lyrics}
                       images={videoImages}
                       childName={musicData.childName}
                     />
                   </div>
                 )}
 
-                {audioUrl && (!lyrics || videoImages.length === 0) && (
+                {audioUrl && videoImages.length === 0 && (
                   <div className="bg-muted/50 rounded-2xl p-4 mb-6">
                     <audio controls className="w-full" src={audioUrl}>
                       Seu navegador não suporta o player de áudio.

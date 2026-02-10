@@ -1,46 +1,10 @@
 export interface VideoExportOptions {
   audioUrl: string;
   images: string[];
-  lyrics: string;
   childName: string;
-  width: number;
-  height: number;
+  width?: number;
+  height?: number;
   onProgress?: (progress: number) => void;
-}
-
-export interface VideoSize {
-  label: string;
-  width: number;
-  height: number;
-  icon: string;
-}
-
-export const VIDEO_SIZES: VideoSize[] = [
-  { label: "Stories / Reels (9:16)", width: 1080, height: 1920, icon: "📱" },
-  { label: "Feed Instagram (1:1)", width: 1080, height: 1080, icon: "📷" },
-  { label: "YouTube (16:9)", width: 1920, height: 1080, icon: "🎬" },
-];
-
-function wrapText(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  maxWidth: number
-): string[] {
-  const words = text.split(" ");
-  const lines: string[] = [];
-  let currentLine = words[0] || "";
-
-  for (let i = 1; i < words.length; i++) {
-    const testLine = currentLine + " " + words[i];
-    if (ctx.measureText(testLine).width > maxWidth) {
-      lines.push(currentLine);
-      currentLine = words[i];
-    } else {
-      currentLine = testLine;
-    }
-  }
-  lines.push(currentLine);
-  return lines;
 }
 
 async function loadImage(url: string): Promise<HTMLImageElement> {
@@ -53,120 +17,61 @@ async function loadImage(url: string): Promise<HTMLImageElement> {
   });
 }
 
-function drawFrame(
+function drawImageCover(
   ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
   width: number,
   height: number,
-  bgImage: HTMLImageElement | null,
-  currentLine: string,
-  prevLine: string | null,
-  nextLine: string | null,
-  childName: string
+  opacity: number = 1
 ) {
-  // Draw background image (cover fit)
-  if (bgImage) {
-    const imgRatio = bgImage.width / bgImage.height;
-    const canvasRatio = width / height;
-    let sx = 0, sy = 0, sw = bgImage.width, sh = bgImage.height;
-    if (imgRatio > canvasRatio) {
-      sw = bgImage.height * canvasRatio;
-      sx = (bgImage.width - sw) / 2;
-    } else {
-      sh = bgImage.width / canvasRatio;
-      sy = (bgImage.height - sh) / 2;
-    }
-    ctx.drawImage(bgImage, sx, sy, sw, sh, 0, 0, width, height);
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  const imgRatio = img.width / img.height;
+  const canvasRatio = width / height;
+  let sx = 0, sy = 0, sw = img.width, sh = img.height;
+  if (imgRatio > canvasRatio) {
+    sw = img.height * canvasRatio;
+    sx = (img.width - sw) / 2;
   } else {
-    ctx.fillStyle = "#1a1a2e";
-    ctx.fillRect(0, 0, width, height);
+    sh = img.width / canvasRatio;
+    sy = (img.height - sh) / 2;
   }
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, width, height);
+  ctx.restore();
+}
 
-  // Dark gradient overlay
-  const grad = ctx.createLinearGradient(0, 0, 0, height);
-  grad.addColorStop(0, "rgba(0,0,0,0.1)");
-  grad.addColorStop(0.5, "rgba(0,0,0,0.3)");
-  grad.addColorStop(1, "rgba(0,0,0,0.8)");
+function drawVignette(ctx: CanvasRenderingContext2D, width: number, height: number) {
+  const grad = ctx.createRadialGradient(
+    width / 2, height / 2, Math.min(width, height) * 0.3,
+    width / 2, height / 2, Math.max(width, height) * 0.7
+  );
+  grad.addColorStop(0, "rgba(0,0,0,0)");
+  grad.addColorStop(1, "rgba(0,0,0,0.3)");
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, width, height);
-
-  // Child name badge
-  const badgeFontSize = Math.round(width * 0.025);
-  ctx.font = `bold ${badgeFontSize}px sans-serif`;
-  const badgeText = `🎵 ${childName}`;
-  const badgeWidth = ctx.measureText(badgeText).width + badgeFontSize * 2;
-  const badgeX = width * 0.04;
-  const badgeY = height * 0.04;
-  ctx.fillStyle = "rgba(255,255,255,0.2)";
-  ctx.beginPath();
-  const bh = badgeFontSize * 2;
-  ctx.roundRect(badgeX, badgeY, badgeWidth, bh, bh / 2);
-  ctx.fill();
-  ctx.fillStyle = "#ffffff";
-  ctx.textAlign = "left";
-  ctx.textBaseline = "middle";
-  ctx.fillText(badgeText, badgeX + badgeFontSize, badgeY + bh / 2);
-
-  // Lyrics area
-  const lyricsY = height * 0.78;
-  const mainFontSize = Math.round(width * 0.04);
-  const subFontSize = Math.round(width * 0.028);
-  const maxTextWidth = width * 0.85;
-
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-
-  // Previous line (dimmed)
-  if (prevLine) {
-    ctx.font = `bold ${subFontSize}px sans-serif`;
-    ctx.fillStyle = "rgba(255,255,255,0.4)";
-    ctx.shadowColor = "rgba(0,0,0,0.5)";
-    ctx.shadowBlur = 4;
-    const wrappedPrev = wrapText(ctx, prevLine, maxTextWidth);
-    wrappedPrev.forEach((line, i) => {
-      ctx.fillText(line, width / 2, lyricsY - mainFontSize * 1.8 + i * subFontSize * 1.3);
-    });
-  }
-
-  // Current line (bright)
-  ctx.font = `bold ${mainFontSize}px sans-serif`;
-  ctx.fillStyle = "#ffffff";
-  ctx.shadowColor = "rgba(0,0,0,0.7)";
-  ctx.shadowBlur = 8;
-  const wrappedMain = wrapText(ctx, currentLine, maxTextWidth);
-  wrappedMain.forEach((line, i) => {
-    ctx.fillText(line, width / 2, lyricsY + i * mainFontSize * 1.3);
-  });
-
-  // Next line (dimmed)
-  if (nextLine) {
-    ctx.font = `bold ${subFontSize}px sans-serif`;
-    ctx.fillStyle = "rgba(255,255,255,0.4)";
-    ctx.shadowColor = "rgba(0,0,0,0.5)";
-    ctx.shadowBlur = 4;
-    const wrappedNext = wrapText(ctx, nextLine, maxTextWidth);
-    const nextY = lyricsY + wrappedMain.length * mainFontSize * 1.3 + mainFontSize * 0.5;
-    wrappedNext.forEach((line, i) => {
-      ctx.fillText(line, width / 2, nextY + i * subFontSize * 1.3);
-    });
-  }
-
-  ctx.shadowBlur = 0;
 }
 
 export async function exportVideo(options: VideoExportOptions): Promise<Blob> {
-  const { audioUrl, images, lyrics, childName, width, height, onProgress } = options;
-
-  // Parse lyrics
-  const lines = lyrics.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
+  const {
+    audioUrl,
+    images,
+    width = 1080,
+    height = 1920,
+    onProgress,
+  } = options;
 
   // Load images
-  const loadedImages: (HTMLImageElement | null)[] = [];
+  const loadedImages: HTMLImageElement[] = [];
   for (const url of images) {
     try {
       loadedImages.push(await loadImage(url));
     } catch {
-      loadedImages.push(null);
+      // skip failed images
     }
+  }
+
+  if (loadedImages.length === 0) {
+    throw new Error("Nenhuma imagem disponível para gerar o vídeo.");
   }
 
   // Create canvas
@@ -175,42 +80,34 @@ export async function exportVideo(options: VideoExportOptions): Promise<Blob> {
   canvas.height = height;
   const ctx = canvas.getContext("2d")!;
 
-  // Create audio element
+  // Load audio
   const audio = new Audio();
   audio.crossOrigin = "anonymous";
   audio.src = audioUrl;
-  audio.muted = false;
 
   await new Promise<void>((resolve, reject) => {
     audio.oncanplaythrough = () => resolve();
-    audio.onerror = () => reject(new Error("Failed to load audio"));
+    audio.onerror = () => reject(new Error("Falha ao carregar o áudio."));
     audio.load();
   });
 
   const duration = audio.duration;
-  const introRatio = 0.05;
-  const outroRatio = 0.05;
-  const lyricsStart = duration * introRatio;
-  const lyricsEnd = duration * (1 - outroRatio);
-  const lyricsDuration = lyricsEnd - lyricsStart;
-  const imageInterval = images.length > 0 ? duration / images.length : duration;
+  const imageInterval = duration / loadedImages.length;
+  const fadeDuration = 1.0; // 1 second fade between images
 
-  // Set up MediaRecorder with canvas + audio streams
+  // Set up MediaRecorder
   const canvasStream = canvas.captureStream(30);
-
-  // Create audio context to capture audio stream
   const audioCtx = new AudioContext();
   const source = audioCtx.createMediaElementSource(audio);
   const dest = audioCtx.createMediaStreamDestination();
   source.connect(dest);
-  source.connect(audioCtx.destination); // Also play through speakers (will be muted later)
+  source.connect(audioCtx.destination);
 
   const combined = new MediaStream([
     ...canvasStream.getVideoTracks(),
     ...dest.stream.getAudioTracks(),
   ]);
 
-  // Try webm with vp8+opus, fallback to webm
   const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus")
     ? "video/webm;codecs=vp8,opus"
     : "video/webm";
@@ -228,43 +125,37 @@ export async function exportVideo(options: VideoExportOptions): Promise<Blob> {
   return new Promise<Blob>((resolve, reject) => {
     recorder.onstop = () => {
       audioCtx.close();
-      const blob = new Blob(chunks, { type: mimeType });
-      resolve(blob);
+      resolve(new Blob(chunks, { type: mimeType }));
     };
 
-    recorder.onerror = (e) => {
+    recorder.onerror = () => {
       audioCtx.close();
-      reject(new Error("Recording failed"));
+      reject(new Error("Falha na gravação do vídeo."));
     };
 
-    // Render loop
     let animFrameId: number;
+
     const renderFrame = () => {
       const t = audio.currentTime;
       onProgress?.(Math.min(t / duration, 1));
 
-      // Current image
-      const imgIdx = Math.min(
-        Math.floor(t / imageInterval),
-        loadedImages.length - 1
-      );
-      const bgImage = loadedImages[Math.max(0, imgIdx)] || loadedImages[0];
+      const imgIdx = Math.min(Math.floor(t / imageInterval), loadedImages.length - 1);
+      const timeInSlide = t - imgIdx * imageInterval;
+      const fadeStart = imageInterval - fadeDuration;
 
-      // Current lyric line
-      const elapsed = t - lyricsStart;
-      let lineIdx = -1;
-      if (elapsed >= 0 && lyricsDuration > 0) {
-        lineIdx = Math.min(
-          Math.floor(elapsed / (lyricsDuration / lines.length)),
-          lines.length - 1
-        );
+      // Draw current image
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, width, height);
+      drawImageCover(ctx, loadedImages[imgIdx], width, height, 1);
+
+      // Crossfade to next image
+      if (timeInSlide > fadeStart && imgIdx < loadedImages.length - 1) {
+        const fadeProgress = (timeInSlide - fadeStart) / fadeDuration;
+        drawImageCover(ctx, loadedImages[imgIdx + 1], width, height, fadeProgress);
       }
 
-      const currentLine = lineIdx >= 0 ? lines[lineIdx] : "";
-      const prevLine = lineIdx > 0 ? lines[lineIdx - 1] : null;
-      const nextLine = lineIdx >= 0 && lineIdx < lines.length - 1 ? lines[lineIdx + 1] : null;
-
-      drawFrame(ctx, width, height, bgImage, currentLine, prevLine, nextLine, childName);
+      // Subtle vignette
+      drawVignette(ctx, width, height);
 
       if (!audio.ended && !audio.paused) {
         animFrameId = requestAnimationFrame(renderFrame);
@@ -277,12 +168,8 @@ export async function exportVideo(options: VideoExportOptions): Promise<Blob> {
       recorder.stop();
     };
 
-    // Mute speakers but keep recording audio
     audio.volume = 0;
-
     recorder.start(1000);
-    audio.play().then(() => {
-      renderFrame();
-    }).catch(reject);
+    audio.play().then(() => renderFrame()).catch(reject);
   });
 }
