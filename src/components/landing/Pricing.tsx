@@ -127,7 +127,10 @@ export function Pricing() {
                 variant={plan.popular ? "primary" : "secondary"}
                 size="lg"
                 className="w-full"
-                onClick={() => navigate("/criar")}
+                onClick={() => {
+                  localStorage.setItem("selectedPlan", plan.popular ? "single" : "pacote");
+                  navigate("/criar");
+                }}
               >
                 {plan.popular ? (
                   <>

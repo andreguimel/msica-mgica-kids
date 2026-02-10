@@ -77,6 +77,9 @@ export default function Preview() {
     natureza: "🌿",
   };
 
+  const selectedPlan = localStorage.getItem("selectedPlan") || "single";
+  const isPacote = selectedPlan === "pacote";
+
   const handleBuy = () => {
     localStorage.setItem("musicTaskId", taskId);
     localStorage.setItem("musicData", JSON.stringify(formData));
@@ -195,13 +198,17 @@ export default function Preview() {
             <div className="card-float bg-gradient-to-br from-primary/10 via-lavender/10 to-secondary/10 border-2 border-primary/30">
               <div className="text-center mb-4">
                 <p className="text-sm text-muted-foreground">Preço especial por tempo limitado</p>
-                <p className="text-4xl font-baloo font-extrabold text-gradient">R$ 19,90</p>
-                <p className="text-xs text-muted-foreground">Pagamento único via Pix</p>
+                <p className="text-4xl font-baloo font-extrabold text-gradient">
+                  R$ {isPacote ? "49,90" : "19,90"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {isPacote ? "3 músicas personalizadas • Pix" : "Pagamento único via Pix"}
+                </p>
               </div>
 
               <MagicButton size="lg" className="w-full" onClick={handleBuy}>
                 <ShoppingCart className="w-5 h-5" />
-                Quero a música completa!
+                {isPacote ? "Quero o pacote completo!" : "Quero a música completa!"}
               </MagicButton>
 
               <p className="text-center text-xs text-muted-foreground mt-4">
