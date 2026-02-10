@@ -8,9 +8,13 @@ import {
   Check,
   Music,
   Download,
+  Pencil,
+  Save,
 } from "lucide-react";
 import { MagicButton } from "@/components/ui/MagicButton";
 import { FloatingElements } from "@/components/ui/FloatingElements";
+import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MusicResult {
   taskId: string;
@@ -26,11 +30,16 @@ interface MusicResult {
 export default function Preview() {
   const navigate = useNavigate();
   const [result, setResult] = useState<MusicResult | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedLyrics, setEditedLyrics] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("musicResult");
     if (stored) {
-      setResult(JSON.parse(stored) as MusicResult);
+      const parsed = JSON.parse(stored) as MusicResult;
+      setResult(parsed);
+      setEditedLyrics(parsed.lyrics);
     } else {
       navigate("/criar");
     }
@@ -38,7 +47,27 @@ export default function Preview() {
 
   if (!result) return null;
 
-  const { formData, lyrics, taskId } = result;
+  const { formData, taskId } = result;
+  const lyrics = editedLyrics;
+
+  const handleSaveLyrics = async () => {
+    setIsSaving(true);
+    try {
+      await supabase
+        .from("music_tasks")
+        .update({ lyrics: editedLyrics })
+        .eq("id", taskId);
+
+      const updated = { ...result, lyrics: editedLyrics };
+      setResult(updated);
+      localStorage.setItem("musicResult", JSON.stringify(updated));
+      setIsEditing(false);
+    } catch (e) {
+      console.error("Error saving lyrics:", e);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const themeEmojis: Record<string, string> = {
     animais: "🐻",
@@ -90,17 +119,47 @@ export default function Preview() {
             className="space-y-6"
           >
             <div className="card-float">
-              <h3 className="font-baloo font-bold text-xl mb-4 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-primary" />
-                Letra da Música
-              </h3>
-              <div className="bg-muted/50 rounded-2xl p-6">
-                <pre className="whitespace-pre-wrap font-nunito text-sm leading-relaxed">
-                  {lyrics}
-                </pre>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-baloo font-bold text-xl flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary" />
+                  Letra da Música
+                </h3>
+                {!isEditing ? (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors font-medium"
+                  >
+                    <Pencil className="w-4 h-4" />
+                    Editar
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleSaveLyrics}
+                    disabled={isSaving}
+                    className="flex items-center gap-1.5 text-sm text-mint hover:text-mint/80 transition-colors font-medium"
+                  >
+                    <Save className="w-4 h-4" />
+                    {isSaving ? "Salvando..." : "Salvar"}
+                  </button>
+                )}
               </div>
+              {isEditing ? (
+                <Textarea
+                  value={editedLyrics}
+                  onChange={(e) => setEditedLyrics(e.target.value)}
+                  className="min-h-[300px] rounded-2xl border-2 border-primary/30 focus:border-primary font-nunito text-sm leading-relaxed resize-none"
+                />
+              ) : (
+                <div className="bg-muted/50 rounded-2xl p-6">
+                  <pre className="whitespace-pre-wrap font-nunito text-sm leading-relaxed">
+                    {lyrics}
+                  </pre>
+                </div>
+              )}
               <p className="text-xs text-muted-foreground mt-3 text-center">
-                🎵 Esta é a letra que será cantada na sua música personalizada
+                {isEditing
+                  ? "✏️ Edite a letra como quiser antes de comprar"
+                  : "🎵 Esta é a letra que será cantada na sua música personalizada"}
               </p>
             </div>
           </motion.div>
