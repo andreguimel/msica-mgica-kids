@@ -1,13 +1,17 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Sparkles, Music, Play, Pause } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Sparkles, Music, Play, Pause, SkipForward, SkipBack } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { FloatingElements } from "@/components/ui/FloatingElements";
 import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
 import { MagicButton } from "@/components/ui/MagicButton";
 import heroImage from "@/assets/hero-animals-music.jpg";
 
-const DEMO_AUDIO_URL = "/audio/demo-song.mp3";
+const DEMO_SONGS = [
+  { name: "Pedro", theme: "Animais da Floresta", url: "/audio/demo-song.mp3", emoji: "🐾" },
+  { name: "Amanda", theme: "Princesas Encantadas", url: "/audio/demo-amanda.mp3", emoji: "👑" },
+  { name: "Isabela", theme: "Natureza Mágica", url: "/audio/demo-isabela.mp3", emoji: "🌿" },
+];
 
 export function Hero() {
   const navigate = useNavigate();
@@ -16,8 +20,11 @@ export function Hero() {
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [songIndex, setSongIndex] = useState(0);
 
   const [initialCount] = useState(() => 1234 + Math.floor(Math.random() * 500));
+
+  const song = DEMO_SONGS[songIndex];
 
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
@@ -36,6 +43,34 @@ export function Hero() {
     }
   }, [isPlaying]);
 
+  const changeSong = useCallback((direction: 1 | -1) => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    setIsPlaying(false);
+    setProgress(0);
+    setCurrentTime(0);
+    setDuration(0);
+    setSongIndex((prev) => {
+      const next = prev + direction;
+      if (next < 0) return DEMO_SONGS.length - 1;
+      if (next >= DEMO_SONGS.length) return 0;
+      return next;
+    });
+  }, []);
+
+  // Auto-play after song change
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const onCanPlay = () => {
+      // Don't auto-play on first mount
+    };
+    audio.addEventListener("canplaythrough", onCanPlay);
+    return () => audio.removeEventListener("canplaythrough", onCanPlay);
+  }, [songIndex]);
+
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -45,7 +80,10 @@ export function Hero() {
       setProgress(audio.duration ? (audio.currentTime / audio.duration) * 100 : 0);
     };
     const onMeta = () => setDuration(audio.duration);
-    const onEnd = () => { setIsPlaying(false); setProgress(0); setCurrentTime(0); };
+    const onEnd = () => {
+      // Auto-advance to next song
+      changeSong(1);
+    };
 
     audio.addEventListener("timeupdate", onTime);
     audio.addEventListener("loadedmetadata", onMeta);
@@ -55,12 +93,12 @@ export function Hero() {
       audio.removeEventListener("loadedmetadata", onMeta);
       audio.removeEventListener("ended", onEnd);
     };
-  }, []);
+  }, [changeSong]);
 
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden bg-background stars-bg">
       <FloatingElements />
-      <audio ref={audioRef} src={DEMO_AUDIO_URL} preload="metadata" />
+      <audio ref={audioRef} src={song.url} preload="metadata" />
 
       <div className="container-rounded relative z-10 py-20">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -178,12 +216,24 @@ export function Hero() {
                 )}
               </div>
 
-              {/* Info da música */}
+              {/* Info da música com animação de troca */}
               <div className="text-center mb-4">
-                <h3 className="font-baloo font-bold text-lg text-foreground">
-                  ✨ Música do Pedro ✨
-                </h3>
-                <p className="text-sm text-muted-foreground">Tema: Animais da Floresta</p>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={songIndex}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.25 }}
+                  >
+                    <h3 className="font-baloo font-bold text-lg text-foreground">
+                      ✨ Música da {song.name} ✨
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {song.emoji} Tema: {song.theme}
+                    </p>
+                  </motion.div>
+                </AnimatePresence>
               </div>
 
               {/* Barra de progresso */}
@@ -201,7 +251,16 @@ export function Hero() {
               </div>
 
               {/* Controles */}
-              <div className="flex items-center justify-center gap-6">
+              <div className="flex items-center justify-center gap-4">
+                <motion.button
+                  onClick={() => changeSong(-1)}
+                  className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <SkipBack className="w-4 h-4" />
+                </motion.button>
+
                 <motion.button
                   onClick={togglePlay}
                   className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-lg cursor-pointer"
@@ -212,10 +271,41 @@ export function Hero() {
                 >
                   {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
                 </motion.button>
+
+                <motion.button
+                  onClick={() => changeSong(1)}
+                  className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <SkipForward className="w-4 h-4" />
+                </motion.button>
+              </div>
+
+              {/* Indicador de música atual */}
+              <div className="flex items-center justify-center gap-2 mt-3">
+                {DEMO_SONGS.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      if (i !== songIndex) {
+                        if (audioRef.current) audioRef.current.pause();
+                        setIsPlaying(false);
+                        setProgress(0);
+                        setCurrentTime(0);
+                        setDuration(0);
+                        setSongIndex(i);
+                      }
+                    }}
+                    className={`w-2 h-2 rounded-full transition-all ${
+                      i === songIndex ? "bg-primary scale-125" : "bg-muted-foreground/30"
+                    }`}
+                  />
+                ))}
               </div>
 
               {/* Ondas sonoras animadas */}
-              <div className="flex items-end justify-center gap-1 mt-4 h-6">
+              <div className="flex items-end justify-center gap-1 mt-3 h-6">
                 {[0.6, 1, 0.4, 0.8, 0.5, 1, 0.7, 0.3, 0.9, 0.5, 0.8, 0.6].map((h, i) => (
                   <motion.div
                     key={i}
