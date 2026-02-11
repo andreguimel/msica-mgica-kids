@@ -560,9 +560,19 @@ export default function Payment() {
                             <Music className="w-4 h-4 text-primary" />
                             <span className="text-sm font-medium">{song.childName}</span>
                           </div>
-                          <a href={song.audioUrl} download target="_blank" rel="noopener noreferrer" className="text-primary text-sm font-medium hover:underline">
+                          <button
+                            onClick={() => {
+                              const a = document.createElement("a");
+                              a.href = song.audioUrl;
+                              a.download = `${song.childName}.mp3`;
+                              document.body.appendChild(a);
+                              a.click();
+                              document.body.removeChild(a);
+                            }}
+                            className="text-primary hover:text-primary/80 transition-colors"
+                          >
                             <Download className="w-4 h-4" />
-                          </a>
+                          </button>
                         </div>
                       ))}
                     </div>
