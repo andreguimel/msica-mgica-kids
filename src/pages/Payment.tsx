@@ -44,7 +44,7 @@ interface PackageSong {
   audioUrl: string;
 }
 
-type PaymentState = "form" | "qrcode" | "generating" | "completed";
+type PaymentState = "form" | "qrcode" | "confirmed" | "generating" | "completed";
 
 const planInfo = {
   single: { label: "Música Mágica", price: "9,90", priceNum: "9.90", description: "1 música personalizada" },
@@ -248,6 +248,10 @@ export default function Payment() {
 
   const handleStartGeneration = useCallback(async () => {
     if (!taskId) return;
+
+    // Show "confirmed" state for 2.5 seconds before generating
+    setPaymentState("confirmed");
+    await new Promise((resolve) => setTimeout(resolve, 2500));
 
     setPaymentState("generating");
 
@@ -487,6 +491,8 @@ export default function Payment() {
                 <span className="text-gradient">Sua música está pronta!</span>
               ) : paymentState === "generating" ? (
                 <span className="text-gradient">Gerando sua música...</span>
+              ) : paymentState === "confirmed" ? (
+                <span className="text-gradient">Pagamento confirmado!</span>
               ) : isPackageSong ? (
                 <span className="text-gradient">Gerando sua música...</span>
               ) : paymentState === "qrcode" ? (
@@ -675,6 +681,59 @@ export default function Payment() {
                 <p className="text-xs text-muted-foreground mt-4">
                   Após o pagamento, a geração da música iniciará automaticamente
                 </p>
+              </div>
+            </motion.div>
+          )}
+
+          {/* STEP 2.5: Payment Confirmed */}
+          {paymentState === "confirmed" && (
+            <motion.div
+              key="confirmed"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.1 }}
+              className="max-w-xl mx-auto"
+            >
+              <div className="card-float text-center py-12">
+                <motion.div
+                  className="text-8xl mb-6"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: [0, 1.3, 1] }}
+                  transition={{ duration: 0.6, ease: "easeOut" }}
+                >
+                  ✅
+                </motion.div>
+                <motion.h2
+                  className="text-3xl font-baloo font-bold mb-3 text-gradient"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  Pagamento confirmado!
+                </motion.h2>
+                <motion.p
+                  className="text-muted-foreground text-lg"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  Preparando a magia para {musicData.childName}...
+                </motion.p>
+                <motion.div
+                  className="mt-6 flex justify-center gap-1"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                >
+                  {[0, 1, 2].map((i) => (
+                    <motion.span
+                      key={i}
+                      className="w-3 h-3 rounded-full bg-primary"
+                      animate={{ scale: [1, 1.4, 1], opacity: [0.5, 1, 0.5] }}
+                      transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.2 }}
+                    />
+                  ))}
+                </motion.div>
               </div>
             </motion.div>
           )}
