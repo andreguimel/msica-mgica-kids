@@ -33,6 +33,17 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Only allow calls from the app or from service role (webhook)
+  const origin = req.headers.get("origin") || "";
+  const authorization = req.headers.get("authorization") || "";
+  const isServiceRole = authorization.includes(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "NONE");
+  if (!isServiceRole && !origin.includes("lovable.app") && !origin.includes("localhost")) {
+    return new Response(JSON.stringify({ error: "Forbidden" }), {
+      status: 403,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   try {
     const { taskId } = await req.json();
 
@@ -70,7 +81,15 @@ serve(async (req) => {
 
     // Send lyrics to Kie.ai
     const style = (task.music_style && musicStyleTags[task.music_style]) || themeStyles[task.theme] || themeStyles.animais;
-    const callBackUrl = `${SUPABASE_URL}/functions/v1/kie-callback?internalId=${taskId}`;
+    // Generate HMAC token for callback verification
+    const KIE_API_KEY = Deno.env.get("KIE_API_KEY")!;
+    const encoder = new TextEncoder();
+    const keyData = await crypto.subtle.importKey(
+      "raw", encoder.encode(KIE_API_KEY), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+    );
+    const signature = await crypto.subtle.sign("HMAC", keyData, encoder.encode(taskId));
+    const token = Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, "0")).join("");
+    const callBackUrl = `${SUPABASE_URL}/functions/v1/kie-callback?internalId=${taskId}&token=${token}`;
 
     console.log("Sending to Kie.ai after payment...");
 
