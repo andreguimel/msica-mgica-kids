@@ -48,7 +48,7 @@ serve(async (req) => {
       );
     }
 
-    // Create a placeholder "upsell" task to track this billing
+    // Create a placeholder "upsell" task to track this payment
     const { data: upsellTask, error: upsellError } = await supabase
       .from("music_tasks")
       .insert({
@@ -69,71 +69,66 @@ serve(async (req) => {
     }
 
     const customerEmail = task.user_email || `customer-${taskId.substring(0, 8)}@musicamagica.com`;
-    const BASE_URL = origin || "https://musicamagica.com.br";
 
     const priceInCents = 1500;
     const productName = "Upgrade Pacote Encantado - +2 músicas";
 
-    const billingBody = {
-      frequency: "ONE_TIME",
-      methods: ["PIX"],
-      products: [
-        {
-          externalId: upsellTask.id,
-          name: productName,
-          quantity: 1,
-          price: priceInCents,
-        },
-      ],
-      returnUrl: `${BASE_URL}/pagamento`,
-      completionUrl: `${BASE_URL}/pagamento?upsell=true&paid=true&taskId=${taskId}&upsellTaskId=${upsellTask.id}`,
+    // Create PIX QR Code directly
+    const pixBody = {
+      amount: priceInCents,
+      expiresIn: 900,
+      description: productName,
       customer: {
         name: task.child_name,
         email: customerEmail,
         cellphone: "11999999999",
         taxId: "52998224725",
       },
+      metadata: {
+        externalId: upsellTask.id,
+      },
     };
 
-    console.log("Creating upsell billing:", JSON.stringify(billingBody));
+    console.log("Creating upsell PIX QR Code:", JSON.stringify(pixBody));
 
-    const billingResponse = await fetch("https://api.abacatepay.com/v1/billing/create", {
+    const pixResponse = await fetch("https://api.abacatepay.com/v1/pixQrCode/create", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${ABACATEPAY_API_KEY}`,
       },
-      body: JSON.stringify(billingBody),
+      body: JSON.stringify(pixBody),
     });
 
-    const billingText = await billingResponse.text();
-    console.log("AbacatePay upsell response:", billingText);
+    const pixText = await pixResponse.text();
+    console.log("AbacatePay upsell PIX response:", pixText);
 
-    let billingData;
+    let pixData;
     try {
-      billingData = JSON.parse(billingText);
+      pixData = JSON.parse(pixText);
     } catch {
-      throw new Error(`AbacatePay returned non-JSON: ${billingText.substring(0, 200)}`);
+      throw new Error(`AbacatePay returned non-JSON: ${pixText.substring(0, 200)}`);
     }
 
-    if (!billingResponse.ok) {
-      throw new Error(`AbacatePay error (${billingResponse.status}): ${billingText.substring(0, 300)}`);
+    if (!pixResponse.ok) {
+      throw new Error(`AbacatePay error (${pixResponse.status}): ${pixText.substring(0, 300)}`);
     }
 
-    const billingId = billingData.data?.id || billingData.id;
-    const paymentUrl = billingData.data?.url || billingData.url;
+    const pixId = pixData.data?.id || pixData.id;
+    const brCode = pixData.data?.brCode || pixData.brCode;
+    const brCodeBase64 = pixData.data?.brCodeBase64 || pixData.brCodeBase64;
 
-    // Update the upsell task with billing info
+    // Update the upsell task with pix info
     await supabase
       .from("music_tasks")
       .update({
-        billing_id: billingId || null,
-        payment_url: paymentUrl || null,
+        billing_id: pixId || null,
+        payment_url: brCode || null,
       })
       .eq("id", upsellTask.id);
 
     return new Response(
-      JSON.stringify({ billingId, paymentUrl, upsellTaskId: upsellTask.id }),
+      JSON.stringify({ billingId: pixId, brCode, brCodeBase64, upsellTaskId: upsellTask.id }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
