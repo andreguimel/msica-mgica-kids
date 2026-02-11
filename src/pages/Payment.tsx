@@ -139,27 +139,86 @@ export default function Payment() {
   // Poll for payment confirmation when user returns from Abacate Pay
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("paid") === "true" && taskId && paymentState === "pending") {
-      // Check if this is an upsell return
-      if (params.get("upsell") === "true") {
-        // Upsell payment confirmed — set up package and redirect to create
-        localStorage.setItem("selectedPlan", "pacote");
-        localStorage.setItem("packageSongsRemaining", "2");
-        const currentSongs = getPackageSongs();
-        if (musicData && audioUrl) {
-          const alreadyHas = currentSongs.some(s => s.childName === musicData.childName);
-          if (!alreadyHas) {
-            savePackageSong({ childName: musicData.childName, audioUrl });
-          }
+    if (params.get("paid") !== "true" || !taskId || paymentState !== "pending") return;
+
+    // Check if this is an upsell return
+    if (params.get("upsell") === "true") {
+      localStorage.setItem("selectedPlan", "pacote");
+      localStorage.setItem("packageSongsRemaining", "2");
+      const currentSongs = getPackageSongs();
+      if (musicData && audioUrl) {
+        const alreadyHas = currentSongs.some(s => s.childName === musicData.childName);
+        if (!alreadyHas) {
+          savePackageSong({ childName: musicData.childName, audioUrl });
         }
-        localStorage.removeItem("musicResult");
-        localStorage.removeItem("musicData");
-        localStorage.removeItem("musicTaskId");
-        navigate("/criar");
-        return;
       }
-      handlePaymentConfirmed();
+      localStorage.removeItem("musicResult");
+      localStorage.removeItem("musicData");
+      localStorage.removeItem("musicTaskId");
+      navigate("/criar");
+      return;
     }
+
+    // Auto-poll payment status until confirmed
+    let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 30; // ~60 seconds
+
+    const pollPayment = async () => {
+      if (cancelled) return;
+      attempts++;
+      setIsChecking(true);
+
+      try {
+        const status = await checkPaymentStatus(taskId);
+
+        if (status.payment_status === "paid" || status.status === "processing" || status.status === "completed") {
+          if (cancelled) return;
+          // Payment confirmed!
+          if (isPacote) {
+            localStorage.setItem("packageSongsRemaining", "3");
+            localStorage.setItem("packageSongs", "[]");
+            setSongsRemaining(3);
+            setPackageSongs([]);
+          } else {
+            localStorage.removeItem("packageSongsRemaining");
+            localStorage.removeItem("packageSongs");
+            setSongsRemaining(0);
+            setPackageSongs([]);
+          }
+
+          if (status.status === "completed") {
+            setPaymentState("completed");
+            setIsChecking(false);
+            return;
+          }
+
+          await handleStartGeneration();
+          return;
+        }
+
+        // Not confirmed yet — retry
+        if (attempts < maxAttempts && !cancelled) {
+          setTimeout(pollPayment, 2000);
+        } else {
+          setIsChecking(false);
+          toast({
+            title: "Pagamento não confirmado ⏳",
+            description: "Não conseguimos confirmar o pagamento. Se você já pagou, aguarde alguns minutos e recarregue a página.",
+          });
+        }
+      } catch (error) {
+        if (!cancelled && attempts < maxAttempts) {
+          setTimeout(pollPayment, 3000);
+        } else {
+          setIsChecking(false);
+        }
+      }
+    };
+
+    pollPayment();
+
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taskId, paymentState]);
 
