@@ -72,7 +72,7 @@ export async function createBilling(taskId: string, plan: string): Promise<{ bil
   const response = await fetch(`${SUPABASE_URL}/functions/v1/create-billing`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ taskId, plan }),
+    body: JSON.stringify({ taskId, plan, origin: window.location.origin }),
   });
 
   if (!response.ok) {
@@ -87,7 +87,7 @@ export async function createUpsellBilling(taskId: string): Promise<{ billingId: 
   const response = await fetch(`${SUPABASE_URL}/functions/v1/create-upsell-billing`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ taskId }),
+    body: JSON.stringify({ taskId, origin: window.location.origin }),
   });
 
   if (!response.ok) {

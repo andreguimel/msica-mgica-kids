@@ -277,19 +277,12 @@ export default function Payment() {
 
         await handleStartGeneration();
       } else {
-        // Payment not yet confirmed, try to start anyway (webhook may have fired)
-        if (isPacote) {
-          localStorage.setItem("packageSongsRemaining", "3");
-          localStorage.setItem("packageSongs", "[]");
-          setSongsRemaining(3);
-          setPackageSongs([]);
-        } else {
-          localStorage.removeItem("packageSongsRemaining");
-          localStorage.removeItem("packageSongs");
-          setSongsRemaining(0);
-          setPackageSongs([]);
-        }
-        await handleStartGeneration();
+        // Payment not yet confirmed — poll and wait instead of starting generation
+        setIsChecking(false);
+        toast({
+          title: "Aguardando confirmação ⏳",
+          description: "O pagamento ainda não foi confirmado. Aguarde alguns segundos e tente novamente.",
+        });
       }
     } catch (error) {
       setIsChecking(false);
