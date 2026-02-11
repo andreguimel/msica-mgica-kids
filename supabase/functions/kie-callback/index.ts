@@ -169,7 +169,7 @@ serve(async (req) => {
       try {
         const { data: taskData } = await supabase
           .from("music_tasks")
-          .select("user_email, child_name, access_code, download_url")
+          .select("user_email, child_name, access_code, download_url, lyrics")
           .eq(updateColumn, updateValue)
           .single();
 
@@ -186,6 +186,7 @@ serve(async (req) => {
               childName: taskData.child_name,
               accessCode: taskData.access_code,
               downloadUrl: taskData.download_url,
+              lyrics: taskData.lyrics,
             }),
           });
           console.log("Email send result:", emailResponse.status);
