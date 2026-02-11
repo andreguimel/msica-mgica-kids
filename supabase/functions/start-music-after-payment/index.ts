@@ -37,7 +37,7 @@ serve(async (req) => {
   const origin = req.headers.get("origin") || "";
   const authorization = req.headers.get("authorization") || "";
   const isServiceRole = authorization.includes(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "NONE");
-  const allowedOrigins = ["lovable.app", "lovableproject.com", "localhost", "musicamagica.com", "vercel.app"];
+  const allowedOrigins = ["lovable.app", "lovableproject.com", "localhost", "musicamagica.com", "vercel.app", "musicamagica.com.br"];
   if (!isServiceRole && !allowedOrigins.some((o) => origin.includes(o))) {
     return new Response(JSON.stringify({ error: "Forbidden" }), {
       status: 403,

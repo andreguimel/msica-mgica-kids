@@ -26,7 +26,7 @@ serve(async (req) => {
 
   // Origin validation for user-facing endpoint
   const origin = req.headers.get("origin") || "";
-  const allowedOrigins = ["lovable.app", "lovableproject.com", "localhost", "musicamagica.com", "vercel.app"];
+  const allowedOrigins = ["lovable.app", "lovableproject.com", "localhost", "musicamagica.com", "vercel.app", "musicamagica.com.br"];
   if (!allowedOrigins.some((o) => origin.includes(o))) {
     return new Response(JSON.stringify({ error: "Forbidden" }), {
       status: 403,
