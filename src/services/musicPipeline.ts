@@ -11,7 +11,6 @@ interface GenerateLyricsParams {
   childName: string;
   ageGroup: string;
   theme: string;
-  specialMessage: string;
   userEmail?: string;
   musicStyle?: string;
 }

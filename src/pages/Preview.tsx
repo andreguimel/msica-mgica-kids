@@ -22,7 +22,7 @@ interface MusicResult {
     childName: string;
     ageGroup: string;
     theme: string;
-    specialMessage: string;
+    musicStyle?: string;
   };
   lyrics: string;
 }
@@ -73,8 +73,12 @@ export default function Preview() {
     animais: "🐻",
     princesas: "👸",
     "super-herois": "🦸",
+    "super-heroinas": "🦸‍♀️",
     espaco: "🚀",
     natureza: "🌿",
+    dinossauros: "🦕",
+    futebol: "⚽",
+    fadas: "🧚",
   };
 
   const selectedPlan = localStorage.getItem("selectedPlan") || "single";

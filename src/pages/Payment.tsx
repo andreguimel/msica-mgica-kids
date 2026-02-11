@@ -22,7 +22,7 @@ interface MusicData {
   childName: string;
   ageGroup: string;
   theme: string;
-  specialMessage: string;
+  musicStyle?: string;
 }
 
 interface TaskStatus {
