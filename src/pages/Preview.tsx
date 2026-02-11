@@ -33,6 +33,7 @@ export default function Preview() {
   const [isEditing, setIsEditing] = useState(false);
   const [editedLyrics, setEditedLyrics] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<"single" | "pacote">("single");
 
   useEffect(() => {
     const stored = localStorage.getItem("musicResult");
@@ -83,12 +84,13 @@ export default function Preview() {
     fadas: "🧚",
   };
 
-  const selectedPlan = localStorage.getItem("selectedPlan") || "single";
-  const isPacote = selectedPlan === "pacote";
+  const storedPlan = localStorage.getItem("selectedPlan") || "single";
+  const isPacote = storedPlan === "pacote";
   const packageSongsRemaining = parseInt(localStorage.getItem("packageSongsRemaining") || "0", 10);
   const isPackageFollowUp = isPacote && packageSongsRemaining > 0;
 
   const handleBuy = () => {
+    localStorage.setItem("selectedPlan", selectedPlan);
     localStorage.setItem("musicTaskId", taskId);
     localStorage.setItem("musicData", JSON.stringify(formData));
     navigate("/pagamento");
@@ -202,6 +204,54 @@ export default function Preview() {
               </ul>
             </div>
 
+            {/* Escolha do plano */}
+            {!isPackageFollowUp && (
+              <div className="card-float">
+                <h3 className="font-baloo font-bold text-lg mb-4">Escolha seu plano:</h3>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => setSelectedPlan("single")}
+                    className={`w-full text-left p-4 rounded-2xl border-2 transition-all ${
+                      selectedPlan === "single"
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:border-primary/40"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-bold">🎵 Música Mágica</p>
+                        <p className="text-xs text-muted-foreground">1 música personalizada</p>
+                      </div>
+                      <p className="text-xl font-baloo font-extrabold text-gradient">R$ 9,90</p>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => setSelectedPlan("pacote")}
+                    className={`w-full text-left p-4 rounded-2xl border-2 transition-all relative overflow-hidden ${
+                      selectedPlan === "pacote"
+                        ? "border-secondary bg-secondary/10"
+                        : "border-border hover:border-secondary/40"
+                    }`}
+                  >
+                    <span className="absolute top-0 right-0 bg-secondary text-secondary-foreground text-[10px] font-bold px-2 py-0.5 rounded-bl-lg">
+                      MAIS POPULAR
+                    </span>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-bold">🎁 Pacote Encantado</p>
+                        <p className="text-xs text-muted-foreground">3 músicas personalizadas</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xl font-baloo font-extrabold text-gradient">R$ 24,90</p>
+                        <p className="text-[10px] text-muted-foreground line-through">R$ 29,70</p>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* CTA de compra */}
             <div className="card-float bg-gradient-to-br from-primary/10 via-lavender/10 to-secondary/10 border-2 border-primary/30">
               <div className="text-center mb-4">
@@ -217,10 +267,10 @@ export default function Preview() {
                   <>
                     <p className="text-sm text-muted-foreground">Preço especial por tempo limitado</p>
                     <p className="text-4xl font-baloo font-extrabold text-gradient">
-                      R$ {isPacote ? "24,90" : "9,90"}
+                      R$ {selectedPlan === "pacote" ? "24,90" : "9,90"}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {isPacote ? "3 músicas personalizadas • Pix" : "Pagamento único via Pix"}
+                      {selectedPlan === "pacote" ? "3 músicas personalizadas • Pix" : "Pagamento único via Pix"}
                     </p>
                   </>
                 )}
@@ -230,7 +280,7 @@ export default function Preview() {
                 <ShoppingCart className="w-5 h-5" />
                 {isPackageFollowUp
                   ? "Gerar esta música!"
-                  : isPacote
+                  : selectedPlan === "pacote"
                   ? "Quero o pacote completo!"
                   : "Quero a música completa!"}
               </MagicButton>
