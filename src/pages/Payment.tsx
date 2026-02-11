@@ -114,6 +114,8 @@ export default function Payment() {
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [isCreatingBilling, setIsCreatingBilling] = useState(false);
   const [isCreatingUpsell, setIsCreatingUpsell] = useState(false);
+  const [upsellPaymentUrl, setUpsellPaymentUrl] = useState<string | null>(null);
+  const [upsellTaskId, setUpsellTaskId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   // Form fields
@@ -942,34 +944,120 @@ export default function Payment() {
                         De R$ 19,80
                       </span>
                     </p>
-                    <MagicButton
-                      variant="accent"
-                      size="md"
-                      loading={isCreatingUpsell}
-                      onClick={async () => {
-                        if (!taskId) return;
-                        setIsCreatingUpsell(true);
-                        try {
-                          const result = await createUpsellBilling(taskId);
-                          window.open(result.paymentUrl, "_blank");
-                          toast({
-                            title: "Redirecionando para pagamento 🥑",
-                            description: "Complete o pagamento de R$ 15,00 na aba aberta. Ao finalizar, você será redirecionado automaticamente.",
-                          });
-                        } catch (error) {
-                          console.error("Upsell billing error:", error);
-                          toast({
-                            title: "Erro ao criar cobrança",
-                            description: error instanceof Error ? error.message : "Tente novamente",
-                            variant: "destructive",
-                          });
-                        } finally {
-                          setIsCreatingUpsell(false);
-                        }
-                      }}
-                    >
-                      Quero mais músicas!
-                    </MagicButton>
+
+                    <AnimatePresence mode="wait">
+                      {!upsellPaymentUrl ? (
+                        <MagicButton
+                          key="upsell-btn"
+                          variant="accent"
+                          size="md"
+                          loading={isCreatingUpsell}
+                          onClick={async () => {
+                            if (!taskId) return;
+                            setIsCreatingUpsell(true);
+                            try {
+                              const result = await createUpsellBilling(taskId);
+                              setUpsellPaymentUrl(result.paymentUrl);
+                              setUpsellTaskId(result.upsellTaskId);
+
+                              // Poll for upsell payment
+                              let cancelled = false;
+                              let attempts = 0;
+                              const maxAttempts = 120;
+
+                              const pollUpsell = async () => {
+                                if (cancelled) return;
+                                attempts++;
+                                try {
+                                  const status = await checkPaymentStatus(result.upsellTaskId);
+                                  if (status.payment_status === "paid" || status.status === "processing" || status.status === "completed") {
+                                    if (cancelled) return;
+                                    localStorage.setItem("selectedPlan", "pacote");
+                                    localStorage.setItem("packageSongsRemaining", "2");
+                                    const currentSongs = getPackageSongs();
+                                    if (musicData && audioUrl) {
+                                      const alreadyHas = currentSongs.some(s => s.childName === musicData.childName);
+                                      if (!alreadyHas) {
+                                        savePackageSong({ childName: musicData.childName, audioUrl });
+                                      }
+                                    }
+                                    localStorage.removeItem("musicResult");
+                                    localStorage.removeItem("musicData");
+                                    localStorage.removeItem("musicTaskId");
+                                    navigate("/criar");
+                                    return;
+                                  }
+                                  if (attempts < maxAttempts && !cancelled) {
+                                    setTimeout(pollUpsell, 2000);
+                                  }
+                                } catch {
+                                  if (!cancelled && attempts < maxAttempts) {
+                                    setTimeout(pollUpsell, 3000);
+                                  }
+                                }
+                              };
+
+                              setTimeout(pollUpsell, 3000);
+                            } catch (error) {
+                              console.error("Upsell billing error:", error);
+                              toast({
+                                title: "Erro ao criar cobrança",
+                                description: error instanceof Error ? error.message : "Tente novamente",
+                                variant: "destructive",
+                              });
+                            } finally {
+                              setIsCreatingUpsell(false);
+                            }
+                          }}
+                        >
+                          Quero mais músicas!
+                        </MagicButton>
+                      ) : (
+                        <motion.div
+                          key="upsell-qr"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="mt-2"
+                        >
+                          <div className="inline-flex items-center gap-2 bg-mint/20 text-mint-foreground px-4 py-2 rounded-full text-sm font-medium mb-4">
+                            <QrCode className="w-4 h-4" />
+                            Pague via Pix — R$ 15,00
+                          </div>
+
+                          <div className="bg-white rounded-2xl p-5 inline-block mb-4 shadow-soft">
+                            <QRCode value={upsellPaymentUrl} size={180} />
+                          </div>
+
+                          <p className="text-muted-foreground text-sm mb-3">
+                            Escaneie o QR Code com o app do seu banco
+                          </p>
+
+                          <button
+                            onClick={async () => {
+                              try {
+                                await navigator.clipboard.writeText(upsellPaymentUrl);
+                                toast({ title: "Link copiado! 📋" });
+                              } catch {
+                                toast({ title: "Erro ao copiar", variant: "destructive" });
+                              }
+                            }}
+                            className="inline-flex items-center gap-2 bg-muted hover:bg-muted/80 text-foreground px-4 py-2.5 rounded-xl text-sm font-medium transition-colors mb-4"
+                          >
+                            <Copy className="w-4 h-4" />
+                            Copiar link de pagamento
+                          </button>
+
+                          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                            <motion.div
+                              className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full"
+                              animate={{ rotate: 360 }}
+                              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                            />
+                            Aguardando pagamento...
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </motion.div>
               )}
