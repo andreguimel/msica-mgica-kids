@@ -73,7 +73,7 @@ serve(async (req) => {
 </html>`;
 
     const emailResponse = await resend.emails.send({
-      from: "Música Mágica <noreply@musicamagica.com>",
+      from: "Música Mágica <onboarding@resend.dev>",
       to: [email],
       subject: `🎵 A música de ${childName} está pronta!`,
       html: htmlContent,
