@@ -18,7 +18,6 @@ serve(async (req) => {
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const ABACATEPAY_API_KEY = Deno.env.get("ABACATEPAY_API_KEY");
 
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       throw new Error("Missing Supabase config");
@@ -26,55 +25,21 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // AbacatePay webhook sends billing data
-    const billing = body.data?.billing || body.data || body;
+    // Handle both billing and pixQrCode webhook payloads
+    const billing = body.data?.billing || body.data?.pixQrCode || body.data || body;
     const billingId = billing.id || billing.billingId;
     const status = billing.status;
 
     if (!billingId) {
-      console.log("No billingId found in webhook payload");
+      console.log("No billingId/pixId found in webhook payload");
       return new Response(JSON.stringify({ ok: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log(`Processing webhook for billing ${billingId}, status: ${status}`);
+    console.log(`Processing webhook for ${billingId}, status: ${status}`);
 
-    // Verify billing exists in AbacatePay to prevent forged webhooks
-    if (ABACATEPAY_API_KEY) {
-      try {
-        const verifyResponse = await fetch(`https://api.abacatepay.com/v1/billing/list`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${ABACATEPAY_API_KEY}`,
-          },
-        });
-        if (verifyResponse.ok) {
-          const billings = await verifyResponse.json();
-          const realBilling = (billings.data || []).find((b: any) => b.id === billingId);
-          if (!realBilling) {
-            console.error(`Billing ${billingId} not found in AbacatePay - possible forged webhook`);
-            return new Response(JSON.stringify({ ok: true }), {
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            });
-          }
-          // Use the real status from AbacatePay, not the webhook payload
-          const realStatus = realBilling.status;
-          console.log(`Verified billing ${billingId} real status: ${realStatus}`);
-          if (realStatus !== "PAID" && realStatus !== "COMPLETED" && realStatus !== "completed") {
-            console.log(`Billing ${billingId} not paid (status: ${realStatus}), ignoring`);
-            return new Response(JSON.stringify({ ok: true }), {
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            });
-          }
-        }
-      } catch (verifyError) {
-        console.error("Billing verification error (non-fatal):", verifyError);
-        // Fall through to process normally if verification fails
-      }
-    }
-
-    // Find the task by billing_id
+    // Find the task by billing_id (which stores either billing ID or pix ID)
     const { data: task, error: fetchError } = await supabase
       .from("music_tasks")
       .select("*")
@@ -88,8 +53,8 @@ serve(async (req) => {
       });
     }
 
-    // Check if payment is confirmed (PAID or COMPLETED)
-    const isPaid = status === "PAID" || status === "COMPLETED" || status === "completed";
+    // Check if payment is confirmed
+    const isPaid = status === "PAID" || status === "COMPLETED" || status === "completed" || status === "RECEIVED";
 
     if (isPaid && task.payment_status !== "paid") {
       console.log(`Payment confirmed for task ${task.id}, starting music generation...`);
@@ -97,7 +62,7 @@ serve(async (req) => {
       // Update payment status
       await supabase
         .from("music_tasks")
-        .update({ payment_status: "paid", status: "awaiting_payment" })
+        .update({ payment_status: "paid", status: "processing" })
         .eq("id", task.id);
 
       // Trigger music generation

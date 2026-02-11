@@ -56,70 +56,64 @@ serve(async (req) => {
       : `Música Mágica para ${task.child_name}`;
 
     const customerEmail = reqEmail || task.user_email || `customer-${taskId.substring(0, 8)}@musicamagica.com`;
-    const BASE_URL = origin || "https://musicamagica.com.br";
 
     // Update task with customer email if provided
     if (reqEmail && reqEmail !== task.user_email) {
       await supabase.from("music_tasks").update({ user_email: reqEmail }).eq("id", taskId);
     }
 
-    // Step 1: Create billing for tracking/webhook
-    console.log("Creating billing with inline customer...");
-    const billingBody = {
-      frequency: "ONE_TIME",
-      methods: ["PIX"],
-      products: [
-        {
-          externalId: taskId,
-          name: productName,
-          quantity: 1,
-          price: priceInCents,
-        },
-      ],
-      returnUrl: `${BASE_URL}/pagamento?paid=true&taskId=${taskId}`,
-      completionUrl: `${BASE_URL}/pagamento?paid=true&taskId=${taskId}`,
+    // Create PIX QR Code directly (real PIX, not a billing link)
+    console.log("Creating PIX QR Code...");
+    const pixBody = {
+      amount: priceInCents,
+      expiresIn: 900, // 15 minutes
+      description: productName,
       customer: {
         name: customerName || task.child_name,
         email: customerEmail,
         cellphone: "11999999999",
         taxId: customerCpf || "52998224725",
       },
+      metadata: {
+        externalId: taskId,
+      },
     };
 
-    const billingResponse = await fetch("https://api.abacatepay.com/v1/billing/create", {
+    const pixResponse = await fetch("https://api.abacatepay.com/v1/pixQrCode/create", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${ABACATEPAY_API_KEY}`,
       },
-      body: JSON.stringify(billingBody),
+      body: JSON.stringify(pixBody),
     });
 
-    const billingText = await billingResponse.text();
-    console.log("AbacatePay billing response:", billingText);
+    const pixText = await pixResponse.text();
+    console.log("AbacatePay PIX response:", pixText);
 
-    let billingData;
+    let pixData;
     try {
-      billingData = JSON.parse(billingText);
+      pixData = JSON.parse(pixText);
     } catch {
-      throw new Error(`AbacatePay returned non-JSON: ${billingText.substring(0, 200)}`);
+      throw new Error(`AbacatePay returned non-JSON: ${pixText.substring(0, 200)}`);
     }
 
-    if (!billingResponse.ok) {
-      throw new Error(`AbacatePay billing error (${billingResponse.status}): ${billingText.substring(0, 300)}`);
+    if (!pixResponse.ok) {
+      throw new Error(`AbacatePay PIX error (${pixResponse.status}): ${pixText.substring(0, 300)}`);
     }
 
-    const billingId = billingData.data?.id || billingData.id;
-    const paymentUrl = billingData.data?.url || billingData.url;
+    const pixId = pixData.data?.id || pixData.id;
+    const brCode = pixData.data?.brCode || pixData.brCode;
+    const brCodeBase64 = pixData.data?.brCodeBase64 || pixData.brCodeBase64;
 
-    console.log("Extracted billingId:", billingId, "paymentUrl:", paymentUrl);
+    console.log("Extracted pixId:", pixId);
 
-    // Update task with billing info
+    // Update task with pix info (store pix ID in billing_id for webhook tracking)
     const { error: updateError } = await supabase
       .from("music_tasks")
       .update({
-        billing_id: billingId || null,
-        payment_url: paymentUrl || null,
+        billing_id: pixId || null,
+        payment_url: brCode || null, // Store brCode in payment_url for reference
         payment_status: "pending",
       })
       .eq("id", taskId);
@@ -129,7 +123,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ billingId, paymentUrl }),
+      JSON.stringify({ billingId: pixId, brCode, brCodeBase64 }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
