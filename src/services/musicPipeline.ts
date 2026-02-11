@@ -72,7 +72,7 @@ export async function createBilling(
   taskId: string,
   plan: string,
   customerData?: { name: string; email: string; cpf: string }
-): Promise<{ billingId: string; paymentUrl: string }> {
+): Promise<{ billingId: string; paymentUrl: string; brCode?: string; brCodeBase64?: string }> {
   const response = await fetch(`${SUPABASE_URL}/functions/v1/create-billing`, {
     method: "POST",
     headers,
@@ -94,7 +94,7 @@ export async function createBilling(
   return response.json();
 }
 
-export async function createUpsellBilling(taskId: string): Promise<{ billingId: string; paymentUrl: string; upsellTaskId: string }> {
+export async function createUpsellBilling(taskId: string): Promise<{ billingId: string; paymentUrl: string; upsellTaskId: string; brCode?: string; brCodeBase64?: string }> {
   const response = await fetch(`${SUPABASE_URL}/functions/v1/create-upsell-billing`, {
     method: "POST",
     headers,
