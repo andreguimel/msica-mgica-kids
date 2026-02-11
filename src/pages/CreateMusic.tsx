@@ -176,7 +176,7 @@ export default function CreateMusic() {
           >
             <div className="card-float bg-primary/5 border border-primary/20 text-center py-3">
               <p className="text-sm font-medium">
-                🎁 Pacote Encantado — Música {packageSongs.length + 1} de 3
+                🎁 Pacote Encantado — Música {4 - packageSongsRemaining} de 3
               </p>
               <p className="text-xs text-muted-foreground">
                 {packageSongsRemaining} {packageSongsRemaining === 1 ? "música restante" : "músicas restantes"} • Já pago!
