@@ -15,7 +15,7 @@ import {
 import { MagicButton } from "@/components/ui/MagicButton";
 import { FloatingElements } from "@/components/ui/FloatingElements";
 import { useToast } from "@/hooks/use-toast";
-import { createBilling, startMusicAfterPayment, pollTaskStatus, checkPaymentStatus } from "@/services/musicPipeline";
+import { createBilling, createUpsellBilling, startMusicAfterPayment, pollTaskStatus, checkPaymentStatus } from "@/services/musicPipeline";
 import SongDownloads from "@/components/SongDownloads";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -81,6 +81,7 @@ export default function Payment() {
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [isCreatingBilling, setIsCreatingBilling] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [isCreatingUpsell, setIsCreatingUpsell] = useState(false);
 
   const selectedPlan = localStorage.getItem("selectedPlan") || "single";
   const plan = planInfo[selectedPlan as keyof typeof planInfo];
@@ -139,6 +140,24 @@ export default function Payment() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("paid") === "true" && taskId && paymentState === "pending") {
+      // Check if this is an upsell return
+      if (params.get("upsell") === "true") {
+        // Upsell payment confirmed — set up package and redirect to create
+        localStorage.setItem("selectedPlan", "pacote");
+        localStorage.setItem("packageSongsRemaining", "2");
+        const currentSongs = getPackageSongs();
+        if (musicData && audioUrl) {
+          const alreadyHas = currentSongs.some(s => s.childName === musicData.childName);
+          if (!alreadyHas) {
+            savePackageSong({ childName: musicData.childName, audioUrl });
+          }
+        }
+        localStorage.removeItem("musicResult");
+        localStorage.removeItem("musicData");
+        localStorage.removeItem("musicTaskId");
+        navigate("/criar");
+        return;
+      }
       handlePaymentConfirmed();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -682,21 +701,28 @@ export default function Payment() {
                     <MagicButton
                       variant="accent"
                       size="md"
-                      onClick={() => {
-                        localStorage.setItem("selectedPlan", "pacote");
-                        localStorage.setItem("packageSongsRemaining", "2");
-                        const currentSongs = getPackageSongs();
-                        if (musicData && audioUrl) {
-                          const alreadyHas = currentSongs.some(s => s.childName === musicData.childName);
-                          if (!alreadyHas) {
-                            savePackageSong({ childName: musicData.childName, audioUrl });
-                            setPackageSongs(getPackageSongs());
-                          }
+                      loading={isCreatingUpsell}
+                      onClick={async () => {
+                        if (!taskId) return;
+                        setIsCreatingUpsell(true);
+                        try {
+                          const result = await createUpsellBilling(taskId);
+                          // Redirect user to Abacate Pay for R$15 upsell payment
+                          window.open(result.paymentUrl, "_blank");
+                          toast({
+                            title: "Redirecionando para pagamento 🥑",
+                            description: "Complete o pagamento de R$ 15,00 na aba aberta. Ao finalizar, você será redirecionado automaticamente.",
+                          });
+                        } catch (error) {
+                          console.error("Upsell billing error:", error);
+                          toast({
+                            title: "Erro ao criar cobrança",
+                            description: error instanceof Error ? error.message : "Tente novamente",
+                            variant: "destructive",
+                          });
+                        } finally {
+                          setIsCreatingUpsell(false);
                         }
-                        localStorage.removeItem("musicResult");
-                        localStorage.removeItem("musicData");
-                        localStorage.removeItem("musicTaskId");
-                        navigate("/criar");
                       }}
                     >
                       Quero mais músicas!

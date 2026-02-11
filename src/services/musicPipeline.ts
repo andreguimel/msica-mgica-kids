@@ -83,6 +83,21 @@ export async function createBilling(taskId: string, plan: string): Promise<{ bil
   return response.json();
 }
 
+export async function createUpsellBilling(taskId: string): Promise<{ billingId: string; paymentUrl: string; upsellTaskId: string }> {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/create-upsell-billing`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ taskId }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: "Erro ao criar cobrança de upsell" }));
+    throw new Error(error.error || `Erro ${response.status}`);
+  }
+
+  return response.json();
+}
+
 // Step 3: Start music generation after payment (called by webhook or manually)
 export async function startMusicAfterPayment(taskId: string): Promise<void> {
   const response = await fetch(`${SUPABASE_URL}/functions/v1/start-music-after-payment`, {
