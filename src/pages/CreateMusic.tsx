@@ -140,6 +140,13 @@ export default function CreateMusic() {
       }
 
       localStorage.setItem("selectedPlan", selectedPlanChoice);
+      
+      // Clear package state when starting a fresh single purchase
+      if (selectedPlanChoice === "single") {
+        localStorage.removeItem("packageSongsRemaining");
+        localStorage.removeItem("packageSongs");
+      }
+      
       localStorage.setItem(
         "musicResult",
         JSON.stringify({ taskId, formData, lyrics })
