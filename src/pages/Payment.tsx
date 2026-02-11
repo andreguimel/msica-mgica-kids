@@ -587,9 +587,9 @@ export default function Payment() {
                       Crie músicas para irmãos, primos ou amigos!
                     </p>
                     <p className="text-2xl font-baloo font-bold text-gradient mb-4">
-                      +2 músicas por apenas R$ 39,90
+                      +2 músicas por apenas R$ 15,00
                       <span className="block text-sm text-muted-foreground line-through">
-                        De R$ 39,80
+                        De R$ 19,80
                       </span>
                     </p>
                     <MagicButton variant="accent" size="md">
