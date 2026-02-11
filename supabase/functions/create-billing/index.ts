@@ -45,54 +45,76 @@ serve(async (req) => {
       ? `Pacote Encantado - 3 músicas personalizadas`
       : `Música Mágica para ${task.child_name}`;
 
+    const customerEmail = task.user_email || `customer-${taskId.substring(0, 8)}@musicamagica.com`;
     const PREVIEW_URL = "https://id-preview--2748641d-5c04-4c5c-a100-1488a0094549.lovable.app";
 
-    // Create billing via Abacate Pay
+    // Create billing via Abacate Pay (customer is created inline)
+    console.log("Creating billing with inline customer...");
+    const billingBody = {
+      frequency: "ONE_TIME",
+      methods: ["PIX"],
+      products: [
+        {
+          externalId: taskId,
+          name: productName,
+          quantity: 1,
+          price: priceInCents,
+        },
+      ],
+      returnUrl: `${PREVIEW_URL}/pagamento`,
+      completionUrl: `${PREVIEW_URL}/pagamento?paid=true&taskId=${taskId}`,
+      customer: {
+        name: task.child_name,
+        email: customerEmail,
+        cellphone: "11999999999",
+        taxId: "52998224725",
+      },
+    };
+    console.log("Billing request body:", JSON.stringify(billingBody));
+
     const billingResponse = await fetch("https://api.abacatepay.com/v1/billing/create", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${ABACATEPAY_API_KEY}`,
       },
-      body: JSON.stringify({
-        frequency: "ONE_TIME",
-        methods: ["PIX"],
-        products: [
-          {
-            externalId: taskId,
-            name: productName,
-            quantity: 1,
-            price: priceInCents,
-          },
-        ],
-        returnUrl: `${PREVIEW_URL}/pagamento`,
-        completionUrl: `${PREVIEW_URL}/pagamento?paid=true&taskId=${taskId}`,
-        metadata: {
-          taskId,
-          plan,
-        },
-      }),
+      body: JSON.stringify(billingBody),
     });
 
-    const billingData = await billingResponse.json();
-    console.log("AbacatePay response:", JSON.stringify(billingData));
+    const billingText = await billingResponse.text();
+    console.log("AbacatePay raw response:", billingText);
+    console.log("AbacatePay status:", billingResponse.status);
 
-    if (!billingResponse.ok) {
-      throw new Error(`AbacatePay error: ${JSON.stringify(billingData)}`);
+    let billingData;
+    try {
+      billingData = JSON.parse(billingText);
+    } catch {
+      throw new Error(`AbacatePay returned non-JSON: ${billingText.substring(0, 200)}`);
     }
 
-    const billingId = billingData.data?.id;
-    const paymentUrl = billingData.data?.url;
+    if (!billingResponse.ok) {
+      throw new Error(`AbacatePay error (${billingResponse.status}): ${billingText.substring(0, 300)}`);
+    }
+
+    // Try different response structures
+    const billingId = billingData.data?.id || billingData.id;
+    const paymentUrl = billingData.data?.url || billingData.url;
+
+    console.log("Extracted billingId:", billingId, "paymentUrl:", paymentUrl);
 
     // Update task with billing info
-    await supabase
+    const { error: updateError } = await supabase
       .from("music_tasks")
       .update({
-        billing_id: billingId,
-        payment_url: paymentUrl,
+        billing_id: billingId || null,
+        payment_url: paymentUrl || null,
         payment_status: "pending",
       })
       .eq("id", taskId);
+
+    if (updateError) {
+      console.error("DB update error:", updateError);
+    }
 
     return new Response(
       JSON.stringify({ billingId, paymentUrl }),
