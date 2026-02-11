@@ -59,24 +59,31 @@ serve(async (req) => {
     if (isPaid && task.payment_status !== "paid") {
       console.log(`Payment confirmed for task ${task.id}, starting music generation...`);
 
-      // Update payment status only - start-music-after-payment will update status to 'processing'
+      // Check if this is an upsell placeholder (should NOT trigger music generation)
+      const isUpsell = task.lyrics === "__UPSELL__";
+
+      // Update payment status
       await supabase
         .from("music_tasks")
-        .update({ payment_status: "paid" })
+        .update({ payment_status: "paid", ...(isUpsell ? { status: "completed" } : {}) })
         .eq("id", task.id);
 
-      // Trigger music generation
-      const startResponse = await fetch(`${SUPABASE_URL}/functions/v1/start-music-after-payment`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        },
-        body: JSON.stringify({ taskId: task.id }),
-      });
+      if (!isUpsell) {
+        // Trigger music generation only for real tasks
+        const startResponse = await fetch(`${SUPABASE_URL}/functions/v1/start-music-after-payment`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+          body: JSON.stringify({ taskId: task.id }),
+        });
 
-      const startResult = await startResponse.json();
-      console.log("Start music result:", JSON.stringify(startResult));
+        const startResult = await startResponse.json();
+        console.log("Start music result:", JSON.stringify(startResult));
+      } else {
+        console.log("Upsell task - skipping music generation");
+      }
     } else {
       // Update payment status regardless
       await supabase
