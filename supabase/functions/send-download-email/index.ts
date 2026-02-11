@@ -77,7 +77,7 @@ serve(async (req) => {
         "api-key": BREVO_API_KEY,
       },
       body: JSON.stringify({
-        sender: { name: "Música Mágica", email: "noreply@musicamagica.com" },
+        sender: { name: "Música Mágica", email: "andreguimel@gmail.com" },
         to: [{ email }],
         subject: `🎵 A música de ${childName} está pronta!`,
         htmlContent,
