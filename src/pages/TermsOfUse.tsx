@@ -28,7 +28,7 @@ const TermsOfUse = () => {
             <ul className="list-disc pl-6 space-y-2">
               <li>Geração de letra personalizada com o nome da criança.</li>
               <li>Criação de música original em formato MP3.</li>
-              <li>Disponibilização do arquivo para download por 30 dias.</li>
+              <li>Disponibilização do arquivo para download por 30 dias após a confirmação do pagamento.</li>
             </ul>
 
             <h2 className="text-xl font-bold text-foreground">3. Uso do Conteúdo</h2>
