@@ -19,6 +19,15 @@ const themeStyles: Record<string, string> = {
   fadas: "children's music, cheerful, happy, magical, ethereal, gentle, harp, bells, whimsical, bright",
 };
 
+const musicStyleTags: Record<string, string> = {
+  "pop-infantil": "children's music, pop, cheerful, catchy, upbeat, fun",
+  "mpb-acustico": "children's music, MPB, acoustic guitar, gentle, warm, Brazilian",
+  "sertanejo": "children's music, sertanejo, acoustic guitar, fun, Brazilian country",
+  "rock-infantil": "children's music, rock, electric guitar, energetic, fun, drums",
+  "bossa-nova": "children's music, bossa nova, gentle, jazzy, acoustic, Brazilian",
+  "reggae": "children's music, reggae, tropical, relaxed, happy, fun",
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -60,7 +69,7 @@ serve(async (req) => {
     }
 
     // Send lyrics to Kie.ai
-    const style = themeStyles[task.theme] || themeStyles.animais;
+    const style = (task.music_style && musicStyleTags[task.music_style]) || themeStyles[task.theme] || themeStyles.animais;
     const callBackUrl = `${SUPABASE_URL}/functions/v1/kie-callback?internalId=${taskId}`;
 
     console.log("Sending to Kie.ai after payment...");

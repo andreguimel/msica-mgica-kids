@@ -13,6 +13,7 @@ interface GenerateLyricsParams {
   theme: string;
   specialMessage: string;
   userEmail?: string;
+  musicStyle?: string;
 }
 
 interface GenerateLyricsResult {
@@ -55,6 +56,7 @@ export async function saveCustomLyrics(params: GenerateLyricsParams & { customLy
       theme: params.theme,
       lyrics: params.customLyrics,
       userEmail: params.userEmail,
+      musicStyle: params.musicStyle,
     }),
   });
 

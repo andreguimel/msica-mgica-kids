@@ -56,6 +56,15 @@ const ageGroups = [
   { value: "11+", label: "11+ anos" },
 ];
 
+const musicStyles = [
+  { value: "pop-infantil", label: "Pop Infantil", emoji: "🎤", desc: "Alegre e dançante" },
+  { value: "mpb-acustico", label: "MPB / Acústico", emoji: "🎸", desc: "Violão e voz suave" },
+  { value: "sertanejo", label: "Sertanejo", emoji: "🤠", desc: "Divertido e animado" },
+  { value: "rock-infantil", label: "Rock Infantil", emoji: "🎸", desc: "Guitarras e energia" },
+  { value: "bossa-nova", label: "Bossa Nova", emoji: "🎷", desc: "Suave e melódico" },
+  { value: "reggae", label: "Reggae", emoji: "🌴", desc: "Relaxante e tropical" },
+];
+
 interface FormData {
   childName: string;
   ageGroup: string;
@@ -64,6 +73,7 @@ interface FormData {
   specialMessage: string;
   userEmail: string;
   customLyrics?: string;
+  musicStyle?: string;
 }
 
 export default function CreateMusic() {
@@ -300,6 +310,45 @@ export default function CreateMusic() {
                           </motion.button>
                         ))}
                       </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Estilo Musical */}
+                <AnimatePresence>
+                  {formData.theme && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                    >
+                      <label className="flex items-center gap-2 text-sm font-semibold mb-2">
+                        <Music className="w-4 h-4 text-primary" />
+                        Estilo musical (opcional)
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {musicStyles.map((style) => (
+                          <motion.button
+                            key={style.value}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, musicStyle: formData.musicStyle === style.value ? "" : style.value })}
+                            className={`p-3 rounded-xl border-2 transition-all ${
+                              formData.musicStyle === style.value
+                                ? "border-primary bg-primary/10 shadow-pink"
+                                : "border-border bg-card hover:border-primary/50"
+                            }`}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            <span className="text-2xl block mb-1">{style.emoji}</span>
+                            <span className="text-xs font-medium block">{style.label}</span>
+                            <span className="text-[10px] text-muted-foreground">{style.desc}</span>
+                          </motion.button>
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Se não escolher, o estilo será definido automaticamente pelo tema
+                      </p>
                     </motion.div>
                   )}
                 </AnimatePresence>
