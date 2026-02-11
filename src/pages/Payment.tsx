@@ -653,8 +653,8 @@ export default function Payment() {
                 </div>
 
                 {/* QR Code */}
-                <div className="bg-white rounded-2xl p-6 inline-block mb-6 shadow-soft">
-                  <QRCode value={paymentUrl} size={220} />
+                <div className="bg-white rounded-2xl p-8 inline-block mb-6 shadow-soft">
+                  <QRCode value={paymentUrl} size={280} level="M" />
                 </div>
 
                 <p className="text-muted-foreground text-sm mb-4">
@@ -1024,8 +1024,8 @@ export default function Payment() {
                             Pague via Pix — R$ 15,00
                           </div>
 
-                          <div className="bg-white rounded-2xl p-5 inline-block mb-4 shadow-soft">
-                            <QRCode value={upsellPaymentUrl} size={180} />
+                          <div className="bg-white rounded-2xl p-6 inline-block mb-4 shadow-soft">
+                            <QRCode value={upsellPaymentUrl} size={240} level="M" />
                           </div>
 
                           <p className="text-muted-foreground text-sm mb-3">
