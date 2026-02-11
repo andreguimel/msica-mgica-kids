@@ -252,7 +252,13 @@ export default function Payment() {
     setPaymentState("generating");
 
     try {
-      await startMusicAfterPayment(taskId);
+      // Try to start generation - may fail if webhook already started it
+      try {
+        await startMusicAfterPayment(taskId);
+      } catch (e) {
+        // If 400, the task is likely already processing (webhook beat us) — that's fine
+        console.log("startMusicAfterPayment failed (likely already started by webhook):", e);
+      }
 
       const stop = pollTaskStatus(
         taskId,
