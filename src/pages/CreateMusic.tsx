@@ -336,12 +336,13 @@ export default function CreateMusic() {
                   <div className="grid grid-cols-2 gap-3 mb-3">
                     <motion.button
                       type="button"
-                      onClick={() => setFormData({ ...formData, customLyrics: "" })}
+                      onClick={() => {
+                        setHasCustomLyrics(false);
+                        setFormData({ ...formData, customLyrics: "" });
+                      }}
                       className={`p-3 rounded-xl border-2 transition-all text-sm font-medium ${
-                        formData.customLyrics === undefined || formData.customLyrics === ""
-                          ? !hasCustomLyrics
-                            ? "border-primary bg-primary/10 shadow-pink"
-                            : "border-border bg-card hover:border-primary/50"
+                        !hasCustomLyrics
+                          ? "border-primary bg-primary/10 shadow-pink"
                           : "border-border bg-card hover:border-primary/50"
                       }`}
                       whileHover={{ scale: 1.02 }}
