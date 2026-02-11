@@ -19,7 +19,7 @@ const steps = [
     number: "3",
     emoji: "👀",
     title: "Pré-visualize",
-    description: "Ouça um trecho da música gratuitamente antes de comprar",
+    description: "Veja a letra personalizada gratuitamente antes de comprar",
     color: "bg-mint",
   },
   {
