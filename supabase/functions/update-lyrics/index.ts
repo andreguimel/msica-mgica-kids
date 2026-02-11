@@ -12,12 +12,29 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Origin validation
+  const origin = req.headers.get("origin") || "";
+  const allowedOrigins = ["lovable.app", "lovableproject.com", "localhost", "musicamagica.com", "vercel.app", "musicamagica.com.br"];
+  if (!allowedOrigins.some((o) => origin.includes(o))) {
+    return new Response(JSON.stringify({ error: "Forbidden" }), {
+      status: 403,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   try {
     const { taskId, lyrics } = await req.json();
 
     if (!taskId || !lyrics || typeof lyrics !== "string" || lyrics.trim().length < 10) {
       return new Response(
         JSON.stringify({ error: "taskId e lyrics são obrigatórios (mínimo 10 caracteres)" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (lyrics.trim().length > 3000) {
+      return new Response(
+        JSON.stringify({ error: "A letra deve ter no máximo 3000 caracteres" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

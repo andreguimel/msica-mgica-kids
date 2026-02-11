@@ -66,7 +66,20 @@ serve(async (req) => {
       );
     }
 
-    return new Response(JSON.stringify(data), {
+    // Only expose sensitive fields (access_code, download_url) when task is completed
+    const safeData = data ? {
+      status: data.status,
+      audio_url: data.audio_url,
+      lyrics: data.lyrics,
+      error_message: data.error_message,
+      payment_status: data.payment_status,
+      ...(data.status === "completed" ? {
+        access_code: data.access_code,
+        download_url: data.download_url,
+      } : {}),
+    } : null;
+
+    return new Response(JSON.stringify(safeData), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
