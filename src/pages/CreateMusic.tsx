@@ -70,7 +70,6 @@ interface FormData {
   ageGroup: string;
   gender: string;
   theme: string;
-  specialMessage: string;
   userEmail: string;
   customLyrics?: string;
   musicStyle?: string;
@@ -86,7 +85,6 @@ export default function CreateMusic() {
     ageGroup: "",
     gender: "",
     theme: "",
-    specialMessage: "",
     userEmail: "",
   });
 

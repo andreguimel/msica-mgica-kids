@@ -62,8 +62,12 @@ export default function MyMusic() {
     animais: "🐾",
     princesas: "👑",
     "super-herois": "🦸",
+    "super-heroinas": "🦸‍♀️",
     espaco: "🚀",
     natureza: "🌿",
+    dinossauros: "🦕",
+    futebol: "⚽",
+    fadas: "🧚",
   };
 
   return (

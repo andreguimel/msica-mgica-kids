@@ -25,7 +25,7 @@ serve(async (req) => {
   }
 
   try {
-    const { childName, ageGroup, theme, specialMessage, userEmail, musicStyle } = await req.json();
+    const { childName, ageGroup, theme, userEmail, musicStyle } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -54,8 +54,7 @@ Regras:
 - Use rimas AABB ou ABAB
 - NÃO use emojis na letra
 - NÃO inclua títulos ou marcações como "Estrofe 1" ou "Refrão"
-- Retorne APENAS o texto da letra, sem explicações
-${specialMessage ? `- Incorpore naturalmente esta mensagem especial: "${specialMessage}"` : ""}`;
+- Retorne APENAS o texto da letra, sem explicações`;
 
     const lyricsResponse = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
