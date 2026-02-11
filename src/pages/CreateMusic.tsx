@@ -398,8 +398,12 @@ export default function CreateMusic() {
             {/* Preço */}
             <div className="card-float bg-gradient-to-br from-primary/10 to-lavender/10 text-center">
               <p className="text-sm text-muted-foreground mb-1">Apenas</p>
-              <p className="text-4xl font-baloo font-extrabold text-gradient">R$ 9,90</p>
-              <p className="text-sm text-muted-foreground mt-1">Pagamento único via Pix</p>
+              <p className="text-4xl font-baloo font-extrabold text-gradient">
+                R$ {isPacote ? "24,90" : "9,90"}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {isPacote ? "3 músicas personalizadas • Pix" : "Pagamento único via Pix"}
+              </p>
             </div>
           </motion.div>
         </div>
