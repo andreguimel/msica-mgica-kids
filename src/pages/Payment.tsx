@@ -117,10 +117,7 @@ export default function Payment() {
   const [upsellPaymentUrl, setUpsellPaymentUrl] = useState<string | null>(null);
   const [upsellTaskId, setUpsellTaskId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [brCode, setBrCode] = useState<string | null>(null);
-  const [brCodeBase64, setBrCodeBase64] = useState<string | null>(null);
-  const [upsellBrCode, setUpsellBrCode] = useState<string | null>(null);
-  const [upsellBrCodeBase64, setUpsellBrCodeBase64] = useState<string | null>(null);
+  // brCode/brCodeBase64 removed — we now use only the billing paymentUrl
 
   // Form fields
   const [parentName, setParentName] = useState("");
@@ -349,8 +346,6 @@ export default function Payment() {
         cpf: cpfDigits,
       });
       setPaymentUrl(result.paymentUrl);
-      setBrCode(result.brCode || null);
-      setBrCodeBase64(result.brCodeBase64 || null);
       setPaymentState("qrcode");
 
       // Start polling for payment confirmation immediately
@@ -417,13 +412,12 @@ export default function Payment() {
   };
 
   const handleCopyLink = async () => {
-    const textToCopy = brCode || paymentUrl;
-    if (!textToCopy) return;
+    if (!paymentUrl) return;
     try {
-      await navigator.clipboard.writeText(textToCopy);
+      await navigator.clipboard.writeText(paymentUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-      toast({ title: "Código Pix copiado! 📋" });
+      toast({ title: "Link de pagamento copiado! 📋" });
     } catch {
       toast({ title: "Erro ao copiar", variant: "destructive" });
     }
@@ -661,24 +655,20 @@ export default function Payment() {
 
                 {/* QR Code */}
                 <div className="bg-white rounded-2xl p-8 inline-block mb-6 shadow-soft">
-                  {brCodeBase64 ? (
-                    <img src={brCodeBase64} alt="QR Code Pix" className="w-[280px] h-[280px]" />
-                  ) : (
-                    <QRCode value={paymentUrl} size={280} level="M" />
-                  )}
+                  <QRCode value={paymentUrl} size={280} level="M" />
                 </div>
 
                 <p className="text-muted-foreground text-sm mb-4">
-                  Escaneie o QR Code acima com o app do seu banco ou copie o código abaixo
+                  Escaneie o QR Code acima com o app do seu banco ou copie o link abaixo
                 </p>
 
-                {/* Copy Pix code button */}
+                {/* Copy payment link button */}
                 <button
                   onClick={handleCopyLink}
                   className="inline-flex items-center gap-2 bg-muted hover:bg-muted/80 text-foreground px-4 py-2.5 rounded-xl text-sm font-medium transition-colors mb-6"
                 >
                   {copied ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
-                  {copied ? "Copiado!" : "Copiar código Pix"}
+                  {copied ? "Copiado!" : "Copiar link de pagamento"}
                 </button>
 
                 {/* Polling indicator */}
@@ -970,8 +960,7 @@ export default function Payment() {
                               const result = await createUpsellBilling(taskId);
                               setUpsellPaymentUrl(result.paymentUrl);
                               setUpsellTaskId(result.upsellTaskId);
-                              setUpsellBrCode(result.brCode || null);
-                              setUpsellBrCodeBase64(result.brCodeBase64 || null);
+                              // brCode removed — using billing paymentUrl only
 
                               // Poll for upsell payment
                               let cancelled = false;
@@ -1038,11 +1027,7 @@ export default function Payment() {
                           </div>
 
                           <div className="bg-white rounded-2xl p-6 inline-block mb-4 shadow-soft">
-                            {upsellBrCodeBase64 ? (
-                              <img src={upsellBrCodeBase64} alt="QR Code Pix" className="w-[240px] h-[240px]" />
-                            ) : (
-                              <QRCode value={upsellPaymentUrl} size={240} level="M" />
-                            )}
+                            <QRCode value={upsellPaymentUrl} size={240} level="M" />
                           </div>
 
                           <p className="text-muted-foreground text-sm mb-3">
@@ -1052,8 +1037,8 @@ export default function Payment() {
                           <button
                             onClick={async () => {
                               try {
-                                await navigator.clipboard.writeText(upsellBrCode || upsellPaymentUrl);
-                                toast({ title: "Código Pix copiado! 📋" });
+                                await navigator.clipboard.writeText(upsellPaymentUrl);
+                                toast({ title: "Link copiado! 📋" });
                               } catch {
                                 toast({ title: "Erro ao copiar", variant: "destructive" });
                               }
