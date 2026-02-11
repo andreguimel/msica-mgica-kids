@@ -1,4 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,8 +22,10 @@ serve(async (req) => {
       );
     }
 
-    const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
-    if (!BREVO_API_KEY) throw new Error("BREVO_API_KEY not configured");
+    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+    if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY not configured");
+
+    const resend = new Resend(RESEND_API_KEY);
 
     const htmlContent = `
 <!DOCTYPE html>
@@ -69,28 +72,14 @@ serve(async (req) => {
 </body>
 </html>`;
 
-    const brevoResponse = await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
-      headers: {
-        "api-key": BREVO_API_KEY,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        sender: { name: "Música Mágica", email: "noreply@musicamagica.com" },
-        to: [{ email }],
-        subject: `🎵 A música de ${childName} está pronta!`,
-        htmlContent,
-      }),
+    const emailResponse = await resend.emails.send({
+      from: "Música Mágica <noreply@musicamagica.com>",
+      to: [email],
+      subject: `🎵 A música de ${childName} está pronta!`,
+      html: htmlContent,
     });
 
-    const brevoData = await brevoResponse.json();
-    console.log("Brevo response:", JSON.stringify(brevoData));
-
-    if (!brevoResponse.ok) {
-      console.error("Brevo error:", brevoData);
-      throw new Error(`Brevo API error: ${brevoData.message || brevoResponse.status}`);
-    }
+    console.log("Resend response:", JSON.stringify(emailResponse));
 
     return new Response(
       JSON.stringify({ success: true }),
