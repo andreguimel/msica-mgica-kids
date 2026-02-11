@@ -13,7 +13,7 @@ const plans = [
       "Música personalizada completa",
       "Letra personalizada com o nome",
       "Download MP3 + letra em texto",
-      "Link exclusivo por 24h",
+      "Link exclusivo por 30 dias",
       "Suporte via WhatsApp",
     ],
   },
