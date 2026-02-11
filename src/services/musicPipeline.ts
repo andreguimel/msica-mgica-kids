@@ -44,7 +44,29 @@ export async function generateLyricsOnly(params: GenerateLyricsParams): Promise<
   return { taskId: data.taskId, lyrics: data.lyrics };
 }
 
-// Step 2: Create billing via Abacate Pay
+// Save custom lyrics (user-written, no AI generation)
+export async function saveCustomLyrics(params: GenerateLyricsParams & { customLyrics?: string }): Promise<{ taskId: string }> {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/save-custom-lyrics`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      childName: params.childName,
+      ageGroup: params.ageGroup,
+      theme: params.theme,
+      lyrics: params.customLyrics,
+      userEmail: params.userEmail,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: "Erro ao salvar letra" }));
+    throw new Error(error.error || `Erro ${response.status}`);
+  }
+
+  const data = await response.json();
+  return { taskId: data.taskId };
+}
+
 export async function createBilling(taskId: string, plan: string): Promise<{ billingId: string; paymentUrl: string }> {
   const response = await fetch(`${SUPABASE_URL}/functions/v1/create-billing`, {
     method: "POST",

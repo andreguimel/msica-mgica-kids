@@ -63,12 +63,14 @@ interface FormData {
   theme: string;
   specialMessage: string;
   userEmail: string;
+  customLyrics?: string;
 }
 
 export default function CreateMusic() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [hasCustomLyrics, setHasCustomLyrics] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     childName: "",
     ageGroup: "",
@@ -102,19 +104,33 @@ export default function CreateMusic() {
       return;
     }
 
+    if (hasCustomLyrics && (!formData.customLyrics || formData.customLyrics.trim().length < 20)) {
+      toast({ title: "Opa! 🎵", description: "A letra precisa ter pelo menos 20 caracteres", variant: "destructive" });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const { taskId, lyrics } = await generateLyricsOnly(formData);
+      let taskId: string;
+      let lyrics: string;
 
-      // Save to localStorage and redirect to preview
+      if (hasCustomLyrics && formData.customLyrics?.trim()) {
+        // Custom lyrics: save directly to DB without AI generation
+        const { saveCustomLyrics } = await import("@/services/musicPipeline");
+        const result = await saveCustomLyrics(formData);
+        taskId = result.taskId;
+        lyrics = formData.customLyrics.trim();
+      } else {
+        // AI-generated lyrics
+        const result = await generateLyricsOnly(formData);
+        taskId = result.taskId;
+        lyrics = result.lyrics;
+      }
+
       localStorage.setItem(
         "musicResult",
-        JSON.stringify({
-          taskId,
-          formData,
-          lyrics,
-        })
+        JSON.stringify({ taskId, formData, lyrics })
       );
       navigate("/preview");
     } catch (error) {
@@ -308,6 +324,82 @@ export default function CreateMusic() {
                   </p>
                 </div>
 
+                {/* Mensagem especial */}
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-semibold mb-2">
+                    <MessageSquare className="w-4 h-4 text-secondary" />
+                    Mensagem especial (opcional)
+                  </label>
+                  <Input
+                    placeholder="Ex: Ela adora brincar no parque"
+                    value={formData.specialMessage}
+                    onChange={(e) => setFormData({ ...formData, specialMessage: e.target.value })}
+                    className="h-12 rounded-xl border-2 border-border focus:border-primary transition-colors"
+                    maxLength={200}
+                  />
+                </div>
+
+                {/* Opção de letra própria */}
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-semibold mb-2">
+                    <Music className="w-4 h-4 text-primary" />
+                    Já tem uma letra pronta?
+                  </label>
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <motion.button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, customLyrics: "" })}
+                      className={`p-3 rounded-xl border-2 transition-all text-sm font-medium ${
+                        formData.customLyrics === undefined || formData.customLyrics === ""
+                          ? !hasCustomLyrics
+                            ? "border-primary bg-primary/10 shadow-pink"
+                            : "border-border bg-card hover:border-primary/50"
+                          : "border-border bg-card hover:border-primary/50"
+                      }`}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      ✨ Gerar com IA
+                    </motion.button>
+                    <motion.button
+                      type="button"
+                      onClick={() => {
+                        setHasCustomLyrics(true);
+                        setFormData({ ...formData, customLyrics: formData.customLyrics || "" });
+                      }}
+                      className={`p-3 rounded-xl border-2 transition-all text-sm font-medium ${
+                        hasCustomLyrics
+                          ? "border-primary bg-primary/10 shadow-pink"
+                          : "border-border bg-card hover:border-primary/50"
+                      }`}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      ✍️ Escrever minha letra
+                    </motion.button>
+                  </div>
+                  <AnimatePresence>
+                    {hasCustomLyrics && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                      >
+                        <Textarea
+                          placeholder="Cole ou escreva a letra da música aqui..."
+                          value={formData.customLyrics || ""}
+                          onChange={(e) => setFormData({ ...formData, customLyrics: e.target.value })}
+                          className="min-h-[180px] rounded-xl border-2 border-border focus:border-primary transition-colors resize-none"
+                          maxLength={3000}
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Máximo 3000 caracteres • Esta letra será cantada exatamente como escrita
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
                 {/* Botão de submit */}
                 <MagicButton
                   size="lg"
@@ -316,7 +408,7 @@ export default function CreateMusic() {
                   disabled={isLoading}
                 >
                   {!isLoading && <Sparkles className="w-5 h-5" />}
-                  Gerar música mágica!
+                  {hasCustomLyrics ? "Continuar com minha letra!" : "Gerar música mágica!"}
                 </MagicButton>
               </form>
             </div>
