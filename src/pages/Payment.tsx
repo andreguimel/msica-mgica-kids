@@ -1,16 +1,20 @@
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import QRCode from "react-qr-code";
 import {
   ArrowLeft,
   Check,
   Clock,
   QrCode,
-  CreditCard,
   Sparkles,
   Download,
   Music,
   Plus,
+  Copy,
+  User,
+  Mail,
+  CreditCard,
 } from "lucide-react";
 import { MagicButton } from "@/components/ui/MagicButton";
 import { FloatingElements } from "@/components/ui/FloatingElements";
@@ -40,7 +44,7 @@ interface PackageSong {
   audioUrl: string;
 }
 
-type PaymentState = "pending" | "generating" | "completed";
+type PaymentState = "form" | "qrcode" | "generating" | "completed";
 
 const planInfo = {
   single: { label: "Música Mágica", price: "9,90", priceNum: "9.90", description: "1 música personalizada" },
@@ -65,14 +69,30 @@ function savePackageSong(song: PackageSong) {
   localStorage.setItem("packageSongs", JSON.stringify(songs));
 }
 
+function formatCpf(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+}
+
+function isValidCpf(cpf: string): boolean {
+  const digits = cpf.replace(/\D/g, "");
+  return digits.length === 11;
+}
+
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 export default function Payment() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [musicData, setMusicData] = useState<MusicData | null>(null);
   const [taskId, setTaskId] = useState<string | null>(null);
-  
-  const [isChecking, setIsChecking] = useState(false);
-  const [paymentState, setPaymentState] = useState<PaymentState>("pending");
+
+  const [paymentState, setPaymentState] = useState<PaymentState>("form");
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [accessCode, setAccessCode] = useState<string | null>(null);
   const [lyrics, setLyrics] = useState<string | null>(null);
@@ -80,68 +100,51 @@ export default function Payment() {
   const [stopPolling, setStopPolling] = useState<(() => void) | null>(null);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [isCreatingBilling, setIsCreatingBilling] = useState(false);
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isCreatingUpsell, setIsCreatingUpsell] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  // Form fields
+  const [parentName, setParentName] = useState("");
+  const [parentEmail, setParentEmail] = useState("");
+  const [parentCpf, setParentCpf] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const selectedPlan = localStorage.getItem("selectedPlan") || "single";
   const plan = planInfo[selectedPlan as keyof typeof planInfo];
   const isPacote = selectedPlan === "pacote";
   const [songsRemaining, setSongsRemaining] = useState(getPackageSongsRemaining());
   const [packageSongs, setPackageSongs] = useState<PackageSong[]>(getPackageSongs());
-  const isPackageSong = isPacote && songsRemaining > 0; // This is a follow-up song (already paid)
+  const isPackageSong = isPacote && songsRemaining > 0;
 
-  const currentSongNumber = isPacote ? (3 - songsRemaining) + (paymentState === "completed" ? 0 : 0) : 1;
-  const totalSongs = isPacote ? 3 : 1;
-
-  // Create billing on mount (for non-package songs)
+  // Load task data
   useEffect(() => {
     const stored = localStorage.getItem("musicData");
     const storedTaskId = localStorage.getItem("musicTaskId");
     if (stored && storedTaskId) {
       setMusicData(JSON.parse(stored) as MusicData);
       setTaskId(storedTaskId);
+      // Pre-fill email if available
+      const data = JSON.parse(stored) as any;
+      if (data.userEmail) setParentEmail(data.userEmail);
     } else {
       navigate("/criar");
     }
   }, [navigate]);
 
-  // Create Abacate Pay billing when taskId is ready
-  useEffect(() => {
-    if (!taskId || isPackageSong || paymentUrl || isCreatingBilling) return;
-    
-    const createBillingAsync = async () => {
-      setIsCreatingBilling(true);
-      try {
-        const result = await createBilling(taskId, selectedPlan);
-        setPaymentUrl(result.paymentUrl);
-      } catch (error) {
-        console.error("Error creating billing:", error);
-        toast({
-          title: "Erro ao criar cobrança",
-          description: error instanceof Error ? error.message : "Tente novamente",
-          variant: "destructive",
-        });
-      } finally {
-        setIsCreatingBilling(false);
-      }
-    };
-    createBillingAsync();
-  }, [taskId, isPackageSong, paymentUrl, isCreatingBilling, selectedPlan, toast]);
-
   // Auto-start generation for package follow-up songs (already paid)
   useEffect(() => {
-    if (isPackageSong && taskId && paymentState === "pending") {
+    if (isPackageSong && taskId && paymentState === "form") {
       handleStartGeneration();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPackageSong, taskId, paymentState]);
 
-  // Poll for payment confirmation when user returns from Abacate Pay
+  // Handle return from AbacatePay (paid=true in URL) — start polling
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("paid") !== "true" || !taskId || paymentState !== "pending") return;
+    if (params.get("paid") !== "true" || !taskId || (paymentState !== "form" && paymentState !== "qrcode")) return;
 
-    // Check if this is an upsell return
+    // Upsell return
     if (params.get("upsell") === "true") {
       localStorage.setItem("selectedPlan", "pacote");
       localStorage.setItem("packageSongsRemaining", "2");
@@ -159,22 +162,20 @@ export default function Payment() {
       return;
     }
 
-    // Auto-poll payment status until confirmed
+    // Normal payment return — poll for confirmation
     let cancelled = false;
     let attempts = 0;
-    const maxAttempts = 30; // ~60 seconds
+    const maxAttempts = 30;
 
     const pollPayment = async () => {
       if (cancelled) return;
       attempts++;
-      setIsChecking(true);
 
       try {
         const status = await checkPaymentStatus(taskId);
 
         if (status.payment_status === "paid" || status.status === "processing" || status.status === "completed") {
           if (cancelled) return;
-          // Payment confirmed!
           if (isPacote) {
             localStorage.setItem("packageSongsRemaining", "3");
             localStorage.setItem("packageSongs", "[]");
@@ -189,7 +190,6 @@ export default function Payment() {
 
           if (status.status === "completed") {
             setPaymentState("completed");
-            setIsChecking(false);
             return;
           }
 
@@ -197,41 +197,30 @@ export default function Payment() {
           return;
         }
 
-        // Not confirmed yet — retry
         if (attempts < maxAttempts && !cancelled) {
           setTimeout(pollPayment, 2000);
-        } else {
-          setIsChecking(false);
-          toast({
-            title: "Pagamento não confirmado ⏳",
-            description: "Não conseguimos confirmar o pagamento. Se você já pagou, aguarde alguns minutos e recarregue a página.",
-          });
         }
-      } catch (error) {
+      } catch {
         if (!cancelled && attempts < maxAttempts) {
           setTimeout(pollPayment, 3000);
-        } else {
-          setIsChecking(false);
         }
       }
     };
 
     pollPayment();
-
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taskId, paymentState]);
 
   // Cleanup polling on unmount
   useEffect(() => {
-    return () => {
-      stopPolling?.();
-    };
+    return () => { stopPolling?.(); };
   }, [stopPolling]);
 
   // Countdown timer
   useEffect(() => {
-    if (paymentState !== "pending" || isPackageSong) return;
+    if (paymentState !== "form" && paymentState !== "qrcode") return;
+    if (isPackageSong) return;
     const interval = setInterval(() => {
       setTimeLeft((prev) => (prev <= 0 ? 0 : prev - 1));
     }, 1000);
@@ -248,7 +237,6 @@ export default function Payment() {
     if (!taskId) return;
 
     setPaymentState("generating");
-    setIsChecking(false);
 
     try {
       await startMusicAfterPayment(taskId);
@@ -262,7 +250,6 @@ export default function Payment() {
             setLyrics((status as any).lyrics || null);
             setPaymentState("completed");
 
-            // Save to package songs and decrement remaining
             if (isPacote) {
               const remaining = getPackageSongsRemaining();
               if (remaining > 0) {
@@ -279,7 +266,7 @@ export default function Payment() {
               description: status.error_message || "A geração da música falhou.",
               variant: "destructive",
             });
-            setPaymentState("pending");
+            setPaymentState("form");
           }
         },
         (error) => {
@@ -288,7 +275,7 @@ export default function Payment() {
             description: error.message,
             variant: "destructive",
           });
-          setPaymentState("pending");
+          setPaymentState("form");
         }
       );
 
@@ -299,62 +286,118 @@ export default function Payment() {
         description: error instanceof Error ? error.message : "Erro ao iniciar geração.",
         variant: "destructive",
       });
-      setPaymentState("pending");
+      setPaymentState("form");
     }
   }, [taskId, toast, isPacote]);
 
-  const handlePaymentConfirmed = useCallback(async () => {
+  const handleSubmitPayment = async () => {
     if (!taskId) return;
 
-    setIsChecking(true);
+    // Validate
+    if (!parentName.trim()) {
+      toast({ title: "Preencha seu nome", variant: "destructive" });
+      return;
+    }
+    if (!isValidEmail(parentEmail)) {
+      toast({ title: "E-mail inválido", variant: "destructive" });
+      return;
+    }
+    if (!isValidCpf(parentCpf)) {
+      toast({ title: "CPF inválido", description: "Digite os 11 dígitos do CPF", variant: "destructive" });
+      return;
+    }
+    if (!agreedToTerms) {
+      toast({ title: "Aceite os termos", description: "Você precisa concordar com os Termos de Uso e Política de Privacidade.", variant: "destructive" });
+      return;
+    }
 
+    setIsCreatingBilling(true);
     try {
-      // Check if payment was actually confirmed via webhook
-      const status = await checkPaymentStatus(taskId);
-      
-      if (status.payment_status === "paid" || status.status === "processing" || status.status === "completed") {
-        // Payment confirmed! Set up package if needed
-        if (isPacote) {
-          localStorage.setItem("packageSongsRemaining", "3");
-          localStorage.setItem("packageSongs", "[]");
-          setSongsRemaining(3);
-          setPackageSongs([]);
-        } else {
-          // Single purchase: ensure no package state lingers
-          localStorage.removeItem("packageSongsRemaining");
-          localStorage.removeItem("packageSongs");
-          setSongsRemaining(0);
-          setPackageSongs([]);
-        }
+      const cpfDigits = parentCpf.replace(/\D/g, "");
+      const result = await createBilling(taskId, selectedPlan, {
+        name: parentName.trim(),
+        email: parentEmail.trim(),
+        cpf: cpfDigits,
+      });
+      setPaymentUrl(result.paymentUrl);
+      setPaymentState("qrcode");
 
-        // If music is already processing or completed, start polling
-        if (status.status === "completed") {
-          setPaymentState("completed");
-          setIsChecking(false);
-          return;
-        }
+      // Start polling for payment confirmation immediately
+      let cancelled = false;
+      let attempts = 0;
+      const maxAttempts = 120; // ~4 minutes
 
-        await handleStartGeneration();
-      } else {
-        // Payment not yet confirmed — poll and wait instead of starting generation
-        setIsChecking(false);
-        toast({
-          title: "Aguardando confirmação ⏳",
-          description: "O pagamento ainda não foi confirmado. Aguarde alguns segundos e tente novamente.",
-        });
-      }
+      const pollPayment = async () => {
+        if (cancelled) return;
+        attempts++;
+
+        try {
+          const status = await checkPaymentStatus(taskId);
+
+          if (status.payment_status === "paid" || status.status === "processing" || status.status === "completed") {
+            if (cancelled) return;
+            if (isPacote) {
+              localStorage.setItem("packageSongsRemaining", "3");
+              localStorage.setItem("packageSongs", "[]");
+              setSongsRemaining(3);
+              setPackageSongs([]);
+            } else {
+              localStorage.removeItem("packageSongsRemaining");
+              localStorage.removeItem("packageSongs");
+              setSongsRemaining(0);
+              setPackageSongs([]);
+            }
+
+            if (status.status === "completed") {
+              setPaymentState("completed");
+              return;
+            }
+
+            await handleStartGeneration();
+            return;
+          }
+
+          if (attempts < maxAttempts && !cancelled) {
+            setTimeout(pollPayment, 2000);
+          }
+        } catch {
+          if (!cancelled && attempts < maxAttempts) {
+            setTimeout(pollPayment, 3000);
+          }
+        }
+      };
+
+      // Start polling after a small delay (give webhook time)
+      setTimeout(pollPayment, 3000);
+
+      // Store cleanup
+      const cleanupRef = () => { cancelled = true; };
+      setStopPolling(() => cleanupRef);
     } catch (error) {
-      setIsChecking(false);
+      console.error("Error creating billing:", error);
       toast({
-        title: "Erro 😔",
-        description: error instanceof Error ? error.message : "Erro ao processar pagamento.",
+        title: "Erro ao criar cobrança",
+        description: error instanceof Error ? error.message : "Tente novamente",
         variant: "destructive",
       });
+    } finally {
+      setIsCreatingBilling(false);
     }
-  }, [taskId, toast, isPacote, handleStartGeneration]);
+  };
+
+  const handleCopyLink = async () => {
+    if (!paymentUrl) return;
+    try {
+      await navigator.clipboard.writeText(paymentUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast({ title: "Link copiado! 📋" });
+    } catch {
+      toast({ title: "Erro ao copiar", variant: "destructive" });
+    }
+  };
 
   const handleCreateNextSong = () => {
-    // Clear current song data but keep package tracking
     localStorage.removeItem("musicResult");
     localStorage.removeItem("musicData");
     localStorage.removeItem("musicTaskId");
@@ -427,6 +470,8 @@ export default function Payment() {
                 <span className="text-gradient">Gerando sua música...</span>
               ) : isPackageSong ? (
                 <span className="text-gradient">Gerando sua música...</span>
+              ) : paymentState === "qrcode" ? (
+                <span className="text-gradient">Escaneie o QR Code</span>
               ) : (
                 <>
                   Finalize o <span className="text-gradient">pagamento</span>
@@ -440,9 +485,10 @@ export default function Payment() {
         </motion.div>
 
         <AnimatePresence mode="wait">
-          {paymentState === "pending" && !isPackageSong && (
+          {/* STEP 1: Form with parent data */}
+          {paymentState === "form" && !isPackageSong && (
             <motion.div
-              key="payment"
+              key="form"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
@@ -458,8 +504,8 @@ export default function Payment() {
                 </div>
               </div>
 
-              {/* Card de pagamento */}
               <div className="card-float">
+                {/* Product info */}
                 <div className="text-center border-b border-border pb-6 mb-6">
                   <span className="text-5xl block mb-4">{isPacote ? "🎁" : "🎵"}</span>
                   <h3 className="font-baloo font-bold text-xl mb-2">
@@ -473,84 +519,79 @@ export default function Payment() {
                   </p>
                 </div>
 
-                {/* Pagar via Abacate Pay */}
-                <div className="text-center mb-6">
-                  <div className="inline-flex items-center gap-2 bg-mint/20 text-mint-foreground px-4 py-2 rounded-full text-sm font-medium mb-4">
-                    <QrCode className="w-4 h-4" />
-                    Pague via Pix
+                {/* Parent data form */}
+                <div className="space-y-4 mb-6">
+                  <h4 className="font-baloo font-bold text-lg text-center mb-2">
+                    Dados do responsável
+                  </h4>
+
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Nome completo"
+                      value={parentName}
+                      onChange={(e) => setParentName(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                      maxLength={100}
+                    />
                   </div>
 
-                  {isCreatingBilling ? (
-                    <div className="py-8">
-                      <motion.div
-                        className="text-4xl mb-4"
-                        animate={{ rotate: [0, 10, -10, 0] }}
-                        transition={{ duration: 1, repeat: Infinity }}
-                      >
-                        🥑
-                      </motion.div>
-                      <p className="text-muted-foreground text-sm">Preparando pagamento...</p>
-                    </div>
-                  ) : paymentUrl ? (
-                    <div className="space-y-4">
-                      <div className="flex items-start gap-3 text-left bg-muted/50 rounded-xl p-4">
-                        <Checkbox
-                          id="terms"
-                          checked={agreedToTerms}
-                          onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
-                          className="mt-0.5"
-                        />
-                        <label htmlFor="terms" className="text-sm text-muted-foreground cursor-pointer leading-relaxed">
-                          Li e concordo com os{" "}
-                          <a href="/termos" target="_blank" className="text-primary underline hover:text-primary/80">
-                            Termos de Uso
-                          </a>{" "}
-                          e a{" "}
-                          <a href="/privacidade" target="_blank" className="text-primary underline hover:text-primary/80">
-                            Política de Privacidade
-                          </a>.
-                        </label>
-                      </div>
-                      <a
-                        href={agreedToTerms ? paymentUrl : undefined}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => {
-                          if (!agreedToTerms) {
-                            e.preventDefault();
-                            toast({
-                              title: "Aceite os termos",
-                              description: "Você precisa concordar com os Termos de Uso e Política de Privacidade para continuar.",
-                              variant: "destructive",
-                            });
-                          }
-                        }}
-                        className={`inline-flex items-center justify-center gap-2 w-full bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold py-4 px-8 rounded-2xl text-lg transition-transform shadow-pink ${
-                          agreedToTerms ? "hover:scale-[1.02] opacity-100" : "opacity-50 cursor-not-allowed"
-                        }`}
-                      >
-                        <QrCode className="w-5 h-5" />
-                        Pagar com Pix
-                      </a>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Você será redirecionado para a página de pagamento segura
-                      </p>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <input
+                      type="email"
+                      placeholder="E-mail"
+                      value={parentEmail}
+                      onChange={(e) => setParentEmail(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                      maxLength={255}
+                    />
+                  </div>
 
-                      {isChecking && (
-                        <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                          <motion.div
-                            className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full"
-                            animate={{ rotate: 360 }}
-                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                          />
-                          Verificando pagamento...
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground text-sm py-4">Erro ao criar cobrança. Tente novamente.</p>
-                  )}
+                  <div className="relative">
+                    <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="CPF (apenas números)"
+                      value={parentCpf}
+                      onChange={(e) => setParentCpf(formatCpf(e.target.value))}
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                    />
+                  </div>
                 </div>
+
+                {/* Terms */}
+                <div className="flex items-start gap-3 text-left bg-muted/50 rounded-xl p-4 mb-6">
+                  <Checkbox
+                    id="terms"
+                    checked={agreedToTerms}
+                    onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
+                    className="mt-0.5"
+                  />
+                  <label htmlFor="terms" className="text-sm text-muted-foreground cursor-pointer leading-relaxed">
+                    Li e concordo com os{" "}
+                    <a href="/termos" target="_blank" className="text-primary underline hover:text-primary/80">
+                      Termos de Uso
+                    </a>{" "}
+                    e a{" "}
+                    <a href="/privacidade" target="_blank" className="text-primary underline hover:text-primary/80">
+                      Política de Privacidade
+                    </a>.
+                  </label>
+                </div>
+
+                {/* Submit button */}
+                <MagicButton
+                  size="lg"
+                  className="w-full"
+                  loading={isCreatingBilling}
+                  onClick={handleSubmitPayment}
+                >
+                  <QrCode className="w-5 h-5" />
+                  Gerar QR Code Pix
+                </MagicButton>
 
                 <p className="text-center text-xs text-muted-foreground mt-4">
                   O pagamento é processado de forma segura pela Abacate Pay
@@ -559,7 +600,68 @@ export default function Payment() {
             </motion.div>
           )}
 
-          {(paymentState === "generating" || (paymentState === "pending" && isPackageSong)) && (
+          {/* STEP 2: QR Code displayed */}
+          {paymentState === "qrcode" && paymentUrl && (
+            <motion.div
+              key="qrcode"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="max-w-xl mx-auto"
+            >
+              {/* Timer */}
+              <div className="card-float mb-6 text-center bg-accent/20">
+                <div className="flex items-center justify-center gap-2 text-accent-foreground">
+                  <Clock className="w-5 h-5" />
+                  <span className="font-bold">
+                    Oferta expira em: {formatTimeLeft(timeLeft)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="card-float text-center">
+                <div className="inline-flex items-center gap-2 bg-mint/20 text-mint-foreground px-4 py-2 rounded-full text-sm font-medium mb-6">
+                  <QrCode className="w-4 h-4" />
+                  Pague via Pix — R$ {plan.price}
+                </div>
+
+                {/* QR Code */}
+                <div className="bg-white rounded-2xl p-6 inline-block mb-6 shadow-soft">
+                  <QRCode value={paymentUrl} size={220} />
+                </div>
+
+                <p className="text-muted-foreground text-sm mb-4">
+                  Escaneie o QR Code acima com o app do seu banco ou copie o link abaixo
+                </p>
+
+                {/* Copy link button */}
+                <button
+                  onClick={handleCopyLink}
+                  className="inline-flex items-center gap-2 bg-muted hover:bg-muted/80 text-foreground px-4 py-2.5 rounded-xl text-sm font-medium transition-colors mb-6"
+                >
+                  {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                  {copied ? "Copiado!" : "Copiar link de pagamento"}
+                </button>
+
+                {/* Polling indicator */}
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <motion.div
+                    className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  />
+                  Aguardando confirmação do pagamento...
+                </div>
+
+                <p className="text-xs text-muted-foreground mt-4">
+                  Após o pagamento, a geração da música iniciará automaticamente
+                </p>
+              </div>
+            </motion.div>
+          )}
+
+          {/* STEP 3: Generating */}
+          {(paymentState === "generating" || (paymentState === "form" && isPackageSong)) && (
             <motion.div
               key="generating"
               initial={{ opacity: 0, scale: 0.9 }}
@@ -603,6 +705,7 @@ export default function Payment() {
             </motion.div>
           )}
 
+          {/* STEP 4: Completed */}
           {paymentState === "completed" && (
             <motion.div
               key="success"
@@ -712,7 +815,6 @@ export default function Payment() {
                       Todas as 3 músicas do seu pacote foram criadas com sucesso!
                     </p>
 
-                    {/* List all package songs */}
                     <div className="space-y-2 mb-4">
                       {getPackageSongs().map((song, i) => (
                         <div key={i} className="flex items-center justify-between bg-muted/50 rounded-xl p-3">
@@ -771,7 +873,6 @@ export default function Payment() {
                         setIsCreatingUpsell(true);
                         try {
                           const result = await createUpsellBilling(taskId);
-                          // Redirect user to Abacate Pay for R$15 upsell payment
                           window.open(result.paymentUrl, "_blank");
                           toast({
                             title: "Redirecionando para pagamento 🥑",
