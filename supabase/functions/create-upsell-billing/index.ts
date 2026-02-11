@@ -22,7 +22,7 @@ serve(async (req) => {
   }
 
   try {
-    const { taskId } = await req.json();
+    const { taskId, origin } = await req.json();
 
     const ABACATEPAY_API_KEY = Deno.env.get("ABACATEPAY_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -69,7 +69,7 @@ serve(async (req) => {
     }
 
     const customerEmail = task.user_email || `customer-${taskId.substring(0, 8)}@musicamagica.com`;
-    const PREVIEW_URL = "https://id-preview--2748641d-5c04-4c5c-a100-1488a0094549.lovable.app";
+    const BASE_URL = origin || "https://musicamagica.com.br";
 
     const priceInCents = 1500;
     const productName = "Upgrade Pacote Encantado - +2 músicas";
@@ -85,8 +85,8 @@ serve(async (req) => {
           price: priceInCents,
         },
       ],
-      returnUrl: `${PREVIEW_URL}/pagamento`,
-      completionUrl: `${PREVIEW_URL}/pagamento?upsell=true&paid=true&taskId=${taskId}&upsellTaskId=${upsellTask.id}`,
+      returnUrl: `${BASE_URL}/pagamento`,
+      completionUrl: `${BASE_URL}/pagamento?upsell=true&paid=true&taskId=${taskId}&upsellTaskId=${upsellTask.id}`,
       customer: {
         name: task.child_name,
         email: customerEmail,

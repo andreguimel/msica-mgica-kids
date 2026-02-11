@@ -23,7 +23,7 @@ serve(async (req) => {
   }
 
   try {
-    const { taskId, plan } = await req.json();
+    const { taskId, plan, origin } = await req.json();
 
     const ABACATEPAY_API_KEY = Deno.env.get("ABACATEPAY_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -56,7 +56,7 @@ serve(async (req) => {
       : `Música Mágica para ${task.child_name}`;
 
     const customerEmail = task.user_email || `customer-${taskId.substring(0, 8)}@musicamagica.com`;
-    const PREVIEW_URL = "https://id-preview--2748641d-5c04-4c5c-a100-1488a0094549.lovable.app";
+    const BASE_URL = origin || "https://musicamagica.com.br";
 
     // Create billing via Abacate Pay (customer is created inline)
     console.log("Creating billing with inline customer...");
@@ -71,8 +71,8 @@ serve(async (req) => {
           price: priceInCents,
         },
       ],
-      returnUrl: `${PREVIEW_URL}/pagamento`,
-      completionUrl: `${PREVIEW_URL}/pagamento?paid=true&taskId=${taskId}`,
+      returnUrl: `${BASE_URL}/pagamento`,
+      completionUrl: `${BASE_URL}/pagamento?paid=true&taskId=${taskId}`,
       customer: {
         name: task.child_name,
         email: customerEmail,
