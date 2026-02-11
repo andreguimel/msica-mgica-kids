@@ -43,8 +43,8 @@ interface PackageSong {
 type PaymentState = "pending" | "generating" | "completed";
 
 const planInfo = {
-  single: { label: "Música Mágica", price: "19,90", priceNum: "19.90", description: "1 música personalizada" },
-  pacote: { label: "Pacote Encantado", price: "49,90", priceNum: "49.90", description: "3 músicas personalizadas" },
+  single: { label: "Música Mágica", price: "9,90", priceNum: "9.90", description: "1 música personalizada" },
+  pacote: { label: "Pacote Encantado", price: "24,90", priceNum: "24.90", description: "3 músicas personalizadas" },
 };
 
 function getPackageSongsRemaining(): number {
@@ -86,7 +86,7 @@ export default function Payment() {
   const [packageSongs, setPackageSongs] = useState<PackageSong[]>(getPackageSongs());
   const isPackageSong = isPacote && songsRemaining > 0; // This is a follow-up song (already paid)
 
-  const pixCode = "00020126580014br.gov.bcb.pix0136a1b2c3d4-e5f6-7890-abcd-ef1234567890520400005303986540519.905802BR5925MUSICA MAGICA PARA CRIA6009SAO PAULO62070503***6304ABCD";
+  const pixCode = "00020126580014br.gov.bcb.pix0136a1b2c3d4-e5f6-7890-abcd-ef123456789052040000530398654059.905802BR5925MUSICA MAGICA PARA CRIA6009SAO PAULO62070503***6304ABCD";
 
   const currentSongNumber = isPacote ? (3 - songsRemaining) + (paymentState === "completed" ? 0 : 0) : 1;
   const totalSongs = isPacote ? 3 : 1;
