@@ -211,7 +211,7 @@ export default function Preview() {
                   <>
                     <p className="text-sm text-muted-foreground">Preço especial por tempo limitado</p>
                     <p className="text-4xl font-baloo font-extrabold text-gradient">
-                      R$ {isPacote ? "49,90" : "19,90"}
+                      R$ {isPacote ? "24,90" : "9,90"}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {isPacote ? "3 músicas personalizadas • Pix" : "Pagamento único via Pix"}
