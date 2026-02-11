@@ -114,44 +114,6 @@ serve(async (req) => {
 
     console.log("Extracted billingId:", billingId, "paymentUrl:", paymentUrl);
 
-    // Step 2: Create Pix QR Code for inline display
-    let brCode = "";
-    let brCodeBase64 = "";
-
-    try {
-      const pixBody = {
-        amount: priceInCents,
-        expiresIn: 900, // 15 minutes
-        description: productName,
-      };
-
-      console.log("Creating Pix QR Code:", JSON.stringify(pixBody));
-
-      const pixResponse = await fetch("https://api.abacatepay.com/v1/pixQrCode/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${ABACATEPAY_API_KEY}`,
-        },
-        body: JSON.stringify(pixBody),
-      });
-
-      const pixText = await pixResponse.text();
-      console.log("AbacatePay Pix QR response status:", pixResponse.status);
-      console.log("AbacatePay Pix QR response:", pixText.substring(0, 500));
-
-      if (pixResponse.ok) {
-        const pixData = JSON.parse(pixText);
-        brCode = pixData.data?.brCode || pixData.brCode || "";
-        brCodeBase64 = pixData.data?.brCodeBase64 || pixData.brCodeBase64 || "";
-        console.log("Got brCode length:", brCode.length, "brCodeBase64 length:", brCodeBase64.length);
-      } else {
-        console.error("Pix QR Code creation failed, falling back to payment URL");
-      }
-    } catch (pixError) {
-      console.error("Pix QR Code error (non-fatal):", pixError);
-    }
-
     // Update task with billing info
     const { error: updateError } = await supabase
       .from("music_tasks")
@@ -167,7 +129,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ billingId, paymentUrl, brCode, brCodeBase64 }),
+      JSON.stringify({ billingId, paymentUrl }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
