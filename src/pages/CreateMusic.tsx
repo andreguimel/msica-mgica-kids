@@ -324,20 +324,8 @@ export default function CreateMusic() {
                   </p>
                 </div>
 
-                {/* Mensagem especial */}
-                <div>
-                  <label className="flex items-center gap-2 text-sm font-semibold mb-2">
-                    <MessageSquare className="w-4 h-4 text-secondary" />
-                    Mensagem especial (opcional)
-                  </label>
-                  <Input
-                    placeholder="Ex: Ela adora brincar no parque"
-                    value={formData.specialMessage}
-                    onChange={(e) => setFormData({ ...formData, specialMessage: e.target.value })}
-                    className="h-12 rounded-xl border-2 border-border focus:border-primary transition-colors"
-                    maxLength={200}
-                  />
-                </div>
+
+
 
                 {/* Opção de letra própria */}
                 <div>
