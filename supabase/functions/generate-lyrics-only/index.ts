@@ -25,7 +25,7 @@ serve(async (req) => {
   }
 
   try {
-    const { childName, ageGroup, theme, specialMessage } = await req.json();
+    const { childName, ageGroup, theme, specialMessage, userEmail } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -107,6 +107,7 @@ ${specialMessage ? `- Incorpore naturalmente esta mensagem especial: "${specialM
         age_group: ageGroup,
         status: "awaiting_payment",
         lyrics,
+        user_email: userEmail || null,
       })
       .select("id")
       .single();

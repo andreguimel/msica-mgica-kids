@@ -12,6 +12,7 @@ interface GenerateLyricsParams {
   ageGroup: string;
   theme: string;
   specialMessage: string;
+  userEmail?: string;
 }
 
 interface GenerateLyricsResult {
