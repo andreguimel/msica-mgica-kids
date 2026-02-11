@@ -34,12 +34,12 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-primary transition-colors">
+                <a href="/termos" className="hover:text-primary transition-colors">
                   Termos de Uso
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-primary transition-colors">
+                <a href="/privacidade" className="hover:text-primary transition-colors">
                   Política de Privacidade
                 </a>
               </li>
