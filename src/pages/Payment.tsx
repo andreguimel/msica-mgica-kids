@@ -212,7 +212,7 @@ export default function Payment() {
 
       // For pacote first payment, set remaining songs to 2
       if (isPacote) {
-        localStorage.setItem("packageSongsRemaining", "2");
+        localStorage.setItem("packageSongsRemaining", "3");
         localStorage.setItem("packageSongs", "[]");
         setSongsRemaining(2);
         setPackageSongs([]);
