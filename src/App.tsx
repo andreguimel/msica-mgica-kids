@@ -9,6 +9,8 @@ import Preview from "./pages/Preview";
 import Payment from "./pages/Payment";
 import MyMusic from "./pages/MyMusic";
 import NotFound from "./pages/NotFound";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfUse from "./pages/TermsOfUse";
 import { PurchaseNotification } from "./components/ui/PurchaseNotification";
 
 const queryClient = new QueryClient();
@@ -26,6 +28,8 @@ const App = () => (
           <Route path="/preview" element={<Preview />} />
           <Route path="/pagamento" element={<Payment />} />
           <Route path="/minhas-musicas" element={<MyMusic />} />
+          <Route path="/privacidade" element={<PrivacyPolicy />} />
+          <Route path="/termos" element={<TermsOfUse />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
