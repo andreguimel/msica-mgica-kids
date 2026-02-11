@@ -9,7 +9,7 @@ import {
   MessageSquare,
   ArrowLeft,
   Music,
-  Mail,
+  
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -70,7 +70,7 @@ interface FormData {
   ageGroup: string;
   gender: string;
   theme: string;
-  userEmail: string;
+  userEmail?: string;
   customLyrics?: string;
   musicStyle?: string;
 }
@@ -88,7 +88,6 @@ export default function CreateMusic() {
     ageGroup: "",
     gender: "",
     theme: "",
-    userEmail: "",
   });
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
@@ -110,8 +109,8 @@ export default function CreateMusic() {
       toast({ title: "Opa! 🎵", description: "Escolha um tema favorito", variant: "destructive" });
       return;
     }
-    if (!formData.userEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.userEmail)) {
-      toast({ title: "Opa! 🎵", description: "Digite um e-mail válido", variant: "destructive" });
+    if (!formData.theme) {
+      toast({ title: "Opa! 🎵", description: "Escolha um tema favorito", variant: "destructive" });
       return;
     }
 
@@ -362,25 +361,9 @@ export default function CreateMusic() {
                   )}
                 </AnimatePresence>
 
-                {/* E-mail */}
-                <div>
-                  <label className="flex items-center gap-2 text-sm font-semibold mb-2">
-                    <Mail className="w-4 h-4 text-primary" />
-                    Seu e-mail *
-                  </label>
-                  <Input
-                    type="email"
-                    placeholder="seuemail@exemplo.com"
-                    value={formData.userEmail}
-                    onChange={(e) => setFormData({ ...formData, userEmail: e.target.value })}
-                    className="h-12 rounded-xl border-2 border-border focus:border-primary transition-colors"
-                    maxLength={100}
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Enviaremos o link de download e código de acesso para seu e-mail
-                  </p>
-                </div>
+
+
+
 
 
 
