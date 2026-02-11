@@ -260,6 +260,12 @@ export default function Payment() {
           localStorage.setItem("packageSongs", "[]");
           setSongsRemaining(3);
           setPackageSongs([]);
+        } else {
+          // Single purchase: ensure no package state lingers
+          localStorage.removeItem("packageSongsRemaining");
+          localStorage.removeItem("packageSongs");
+          setSongsRemaining(0);
+          setPackageSongs([]);
         }
 
         // If music is already processing or completed, start polling
@@ -276,6 +282,11 @@ export default function Payment() {
           localStorage.setItem("packageSongsRemaining", "3");
           localStorage.setItem("packageSongs", "[]");
           setSongsRemaining(3);
+          setPackageSongs([]);
+        } else {
+          localStorage.removeItem("packageSongsRemaining");
+          localStorage.removeItem("packageSongs");
+          setSongsRemaining(0);
           setPackageSongs([]);
         }
         await handleStartGeneration();
