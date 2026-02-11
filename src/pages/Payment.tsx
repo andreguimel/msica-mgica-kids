@@ -214,7 +214,7 @@ export default function Payment() {
       if (isPacote) {
         localStorage.setItem("packageSongsRemaining", "3");
         localStorage.setItem("packageSongs", "[]");
-        setSongsRemaining(2);
+        setSongsRemaining(3);
         setPackageSongs([]);
       }
 
