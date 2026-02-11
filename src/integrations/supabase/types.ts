@@ -19,6 +19,7 @@ export type Database = {
           access_code: string | null
           age_group: string
           audio_url: string | null
+          billing_id: string | null
           child_name: string
           created_at: string
           download_expires_at: string | null
@@ -26,6 +27,8 @@ export type Database = {
           error_message: string | null
           id: string
           lyrics: string | null
+          payment_status: string | null
+          payment_url: string | null
           status: string
           task_id: string | null
           theme: string
@@ -36,6 +39,7 @@ export type Database = {
           access_code?: string | null
           age_group: string
           audio_url?: string | null
+          billing_id?: string | null
           child_name: string
           created_at?: string
           download_expires_at?: string | null
@@ -43,6 +47,8 @@ export type Database = {
           error_message?: string | null
           id?: string
           lyrics?: string | null
+          payment_status?: string | null
+          payment_url?: string | null
           status?: string
           task_id?: string | null
           theme: string
@@ -53,6 +59,7 @@ export type Database = {
           access_code?: string | null
           age_group?: string
           audio_url?: string | null
+          billing_id?: string | null
           child_name?: string
           created_at?: string
           download_expires_at?: string | null
@@ -60,6 +67,8 @@ export type Database = {
           error_message?: string | null
           id?: string
           lyrics?: string | null
+          payment_status?: string | null
+          payment_url?: string | null
           status?: string
           task_id?: string | null
           theme?: string

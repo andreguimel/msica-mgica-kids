@@ -44,7 +44,23 @@ export async function generateLyricsOnly(params: GenerateLyricsParams): Promise<
   return { taskId: data.taskId, lyrics: data.lyrics };
 }
 
-// Step 2: Start music generation after payment
+// Step 2: Create billing via Abacate Pay
+export async function createBilling(taskId: string, plan: string): Promise<{ billingId: string; paymentUrl: string }> {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/create-billing`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ taskId, plan }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: "Erro ao criar cobrança" }));
+    throw new Error(error.error || `Erro ${response.status}`);
+  }
+
+  return response.json();
+}
+
+// Step 3: Start music generation after payment (called by webhook or manually)
 export async function startMusicAfterPayment(taskId: string): Promise<void> {
   const response = await fetch(`${SUPABASE_URL}/functions/v1/start-music-after-payment`, {
     method: "POST",
@@ -56,6 +72,22 @@ export async function startMusicAfterPayment(taskId: string): Promise<void> {
     const error = await response.json().catch(() => ({ error: "Erro ao iniciar geração" }));
     throw new Error(error.error || `Erro ${response.status}`);
   }
+}
+
+// Check payment status from database
+export async function checkPaymentStatus(taskId: string): Promise<{ payment_status: string; status: string }> {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/check-task`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ taskId }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: "Erro ao verificar pagamento" }));
+    throw new Error(error.error || `Erro ${response.status}`);
+  }
+
+  return response.json();
 }
 
 export async function checkTaskStatus(taskId: string): Promise<TaskStatus> {
