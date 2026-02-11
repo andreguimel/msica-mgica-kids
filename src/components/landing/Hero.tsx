@@ -159,7 +159,7 @@ export function Hero() {
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">Por apenas</p>
                 <p className="text-3xl font-baloo font-extrabold text-primary">
-                  R$ 14,90
+                  R$ 9,90
                 </p>
               </div>
             </motion.div>
