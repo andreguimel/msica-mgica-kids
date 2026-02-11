@@ -59,10 +59,10 @@ serve(async (req) => {
     if (isPaid && task.payment_status !== "paid") {
       console.log(`Payment confirmed for task ${task.id}, starting music generation...`);
 
-      // Update payment status
+      // Update payment status only - start-music-after-payment will update status to 'processing'
       await supabase
         .from("music_tasks")
-        .update({ payment_status: "paid", status: "processing" })
+        .update({ payment_status: "paid" })
         .eq("id", task.id);
 
       // Trigger music generation
