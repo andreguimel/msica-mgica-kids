@@ -12,9 +12,9 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const origin = req.headers.get("origin") || "";
+  const originHeader = req.headers.get("origin") || "";
   const allowedOrigins = ["lovable.app", "lovableproject.com", "localhost", "musicamagica.com", "vercel.app", "musicamagica.com.br"];
-  if (!allowedOrigins.some((o) => origin.includes(o))) {
+  if (!allowedOrigins.some((o) => originHeader.includes(o))) {
     return new Response(JSON.stringify({ error: "Forbidden" }), {
       status: 403,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -123,6 +123,38 @@ serve(async (req) => {
     const billingId = billingData.data?.id || billingData.id;
     const paymentUrl = billingData.data?.url || billingData.url;
 
+    // Create Pix QR Code for inline display
+    let brCode = "";
+    let brCodeBase64 = "";
+
+    try {
+      const pixBody = {
+        amount: priceInCents,
+        expiresIn: 900,
+        description: productName,
+      };
+
+      const pixResponse = await fetch("https://api.abacatepay.com/v1/pixQrCode/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${ABACATEPAY_API_KEY}`,
+        },
+        body: JSON.stringify(pixBody),
+      });
+
+      const pixText = await pixResponse.text();
+      console.log("AbacatePay upsell Pix QR response status:", pixResponse.status);
+
+      if (pixResponse.ok) {
+        const pixData = JSON.parse(pixText);
+        brCode = pixData.data?.brCode || pixData.brCode || "";
+        brCodeBase64 = pixData.data?.brCodeBase64 || pixData.brCodeBase64 || "";
+      }
+    } catch (pixError) {
+      console.error("Pix QR Code error (non-fatal):", pixError);
+    }
+
     // Update the upsell task with billing info
     await supabase
       .from("music_tasks")
@@ -133,7 +165,7 @@ serve(async (req) => {
       .eq("id", upsellTask.id);
 
     return new Response(
-      JSON.stringify({ billingId, paymentUrl, upsellTaskId: upsellTask.id }),
+      JSON.stringify({ billingId, paymentUrl, upsellTaskId: upsellTask.id, brCode, brCodeBase64 }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {

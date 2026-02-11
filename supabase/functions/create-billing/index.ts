@@ -13,9 +13,9 @@ serve(async (req) => {
   }
 
   // Origin validation
-  const origin = req.headers.get("origin") || "";
+  const originHeader = req.headers.get("origin") || "";
   const allowedOrigins = ["lovable.app", "lovableproject.com", "localhost", "musicamagica.com", "vercel.app", "musicamagica.com.br"];
-  if (!allowedOrigins.some((o) => origin.includes(o))) {
+  if (!allowedOrigins.some((o) => originHeader.includes(o))) {
     return new Response(JSON.stringify({ error: "Forbidden" }), {
       status: 403,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -63,7 +63,7 @@ serve(async (req) => {
       await supabase.from("music_tasks").update({ user_email: reqEmail }).eq("id", taskId);
     }
 
-    // Create billing via Abacate Pay (customer is created inline)
+    // Step 1: Create billing for tracking/webhook
     console.log("Creating billing with inline customer...");
     const billingBody = {
       frequency: "ONE_TIME",
@@ -85,7 +85,6 @@ serve(async (req) => {
         taxId: customerCpf || "52998224725",
       },
     };
-    console.log("Billing request body:", JSON.stringify(billingBody));
 
     const billingResponse = await fetch("https://api.abacatepay.com/v1/billing/create", {
       method: "POST",
@@ -97,8 +96,7 @@ serve(async (req) => {
     });
 
     const billingText = await billingResponse.text();
-    console.log("AbacatePay raw response:", billingText);
-    console.log("AbacatePay status:", billingResponse.status);
+    console.log("AbacatePay billing response:", billingText);
 
     let billingData;
     try {
@@ -108,14 +106,51 @@ serve(async (req) => {
     }
 
     if (!billingResponse.ok) {
-      throw new Error(`AbacatePay error (${billingResponse.status}): ${billingText.substring(0, 300)}`);
+      throw new Error(`AbacatePay billing error (${billingResponse.status}): ${billingText.substring(0, 300)}`);
     }
 
-    // Try different response structures
     const billingId = billingData.data?.id || billingData.id;
     const paymentUrl = billingData.data?.url || billingData.url;
 
     console.log("Extracted billingId:", billingId, "paymentUrl:", paymentUrl);
+
+    // Step 2: Create Pix QR Code for inline display
+    let brCode = "";
+    let brCodeBase64 = "";
+
+    try {
+      const pixBody = {
+        amount: priceInCents,
+        expiresIn: 900, // 15 minutes
+        description: productName,
+      };
+
+      console.log("Creating Pix QR Code:", JSON.stringify(pixBody));
+
+      const pixResponse = await fetch("https://api.abacatepay.com/v1/pixQrCode/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${ABACATEPAY_API_KEY}`,
+        },
+        body: JSON.stringify(pixBody),
+      });
+
+      const pixText = await pixResponse.text();
+      console.log("AbacatePay Pix QR response status:", pixResponse.status);
+      console.log("AbacatePay Pix QR response:", pixText.substring(0, 500));
+
+      if (pixResponse.ok) {
+        const pixData = JSON.parse(pixText);
+        brCode = pixData.data?.brCode || pixData.brCode || "";
+        brCodeBase64 = pixData.data?.brCodeBase64 || pixData.brCodeBase64 || "";
+        console.log("Got brCode length:", brCode.length, "brCodeBase64 length:", brCodeBase64.length);
+      } else {
+        console.error("Pix QR Code creation failed, falling back to payment URL");
+      }
+    } catch (pixError) {
+      console.error("Pix QR Code error (non-fatal):", pixError);
+    }
 
     // Update task with billing info
     const { error: updateError } = await supabase
@@ -132,7 +167,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ billingId, paymentUrl }),
+      JSON.stringify({ billingId, paymentUrl, brCode, brCodeBase64 }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
