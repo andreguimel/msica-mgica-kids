@@ -137,6 +137,8 @@ export function pollTaskStatus(
 ): () => void {
   const startTime = Date.now();
   let stopped = false;
+  let consecutiveErrors = 0;
+  const maxConsecutiveErrors = 3;
 
   const poll = async () => {
     if (stopped) return;
@@ -148,14 +150,21 @@ export function pollTaskStatus(
 
     try {
       const status = await checkTaskStatus(taskId);
+      consecutiveErrors = 0; // Reset on success
       onUpdate(status);
 
       if (status.status === "processing" || status.status === "awaiting_payment") {
         setTimeout(poll, intervalMs);
       }
     } catch (e) {
+      consecutiveErrors++;
       if (!stopped) {
-        onError(e instanceof Error ? e : new Error("Erro ao verificar status"));
+        if (consecutiveErrors >= maxConsecutiveErrors) {
+          onError(new Error("Não foi possível verificar o status após várias tentativas. Tente novamente."));
+        } else {
+          // Retry with backoff
+          setTimeout(poll, intervalMs * (consecutiveErrors + 1));
+        }
       }
     }
   };
