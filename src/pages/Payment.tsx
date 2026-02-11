@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
-  Copy,
   Check,
   Clock,
   QrCode,
@@ -16,7 +15,7 @@ import {
 import { MagicButton } from "@/components/ui/MagicButton";
 import { FloatingElements } from "@/components/ui/FloatingElements";
 import { useToast } from "@/hooks/use-toast";
-import { startMusicAfterPayment, pollTaskStatus } from "@/services/musicPipeline";
+import { createBilling, startMusicAfterPayment, pollTaskStatus, checkPaymentStatus } from "@/services/musicPipeline";
 import SongDownloads from "@/components/SongDownloads";
 
 interface MusicData {
@@ -70,7 +69,7 @@ export default function Payment() {
   const { toast } = useToast();
   const [musicData, setMusicData] = useState<MusicData | null>(null);
   const [taskId, setTaskId] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  
   const [isChecking, setIsChecking] = useState(false);
   const [paymentState, setPaymentState] = useState<PaymentState>("pending");
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -78,6 +77,8 @@ export default function Payment() {
   const [lyrics, setLyrics] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(900);
   const [stopPolling, setStopPolling] = useState<(() => void) | null>(null);
+  const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
+  const [isCreatingBilling, setIsCreatingBilling] = useState(false);
 
   const selectedPlan = localStorage.getItem("selectedPlan") || "single";
   const plan = planInfo[selectedPlan as keyof typeof planInfo];
@@ -86,11 +87,10 @@ export default function Payment() {
   const [packageSongs, setPackageSongs] = useState<PackageSong[]>(getPackageSongs());
   const isPackageSong = isPacote && songsRemaining > 0; // This is a follow-up song (already paid)
 
-  const pixCode = "00020126580014br.gov.bcb.pix0136a1b2c3d4-e5f6-7890-abcd-ef123456789052040000530398654059.905802BR5925MUSICA MAGICA PARA CRIA6009SAO PAULO62070503***6304ABCD";
-
   const currentSongNumber = isPacote ? (3 - songsRemaining) + (paymentState === "completed" ? 0 : 0) : 1;
   const totalSongs = isPacote ? 3 : 1;
 
+  // Create billing on mount (for non-package songs)
   useEffect(() => {
     const stored = localStorage.getItem("musicData");
     const storedTaskId = localStorage.getItem("musicTaskId");
@@ -102,6 +102,29 @@ export default function Payment() {
     }
   }, [navigate]);
 
+  // Create Abacate Pay billing when taskId is ready
+  useEffect(() => {
+    if (!taskId || isPackageSong || paymentUrl || isCreatingBilling) return;
+    
+    const createBillingAsync = async () => {
+      setIsCreatingBilling(true);
+      try {
+        const result = await createBilling(taskId, selectedPlan);
+        setPaymentUrl(result.paymentUrl);
+      } catch (error) {
+        console.error("Error creating billing:", error);
+        toast({
+          title: "Erro ao criar cobrança",
+          description: error instanceof Error ? error.message : "Tente novamente",
+          variant: "destructive",
+        });
+      } finally {
+        setIsCreatingBilling(false);
+      }
+    };
+    createBillingAsync();
+  }, [taskId, isPackageSong, paymentUrl, isCreatingBilling, selectedPlan, toast]);
+
   // Auto-start generation for package follow-up songs (already paid)
   useEffect(() => {
     if (isPackageSong && taskId && paymentState === "pending") {
@@ -109,6 +132,15 @@ export default function Payment() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPackageSong, taskId, paymentState]);
+
+  // Poll for payment confirmation when user returns from Abacate Pay
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("paid") === "true" && taskId && paymentState === "pending") {
+      handlePaymentConfirmed();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskId, paymentState]);
 
   // Cleanup polling on unmount
   useEffect(() => {
@@ -130,16 +162,6 @@ export default function Payment() {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
-
-  const copyPixCode = async () => {
-    await navigator.clipboard.writeText(pixCode);
-    setCopied(true);
-    toast({
-      title: "Código copiado! 📋",
-      description: "Cole no app do seu banco para pagar",
-    });
-    setTimeout(() => setCopied(false), 3000);
   };
 
   const handleStartGeneration = useCallback(async () => {
@@ -207,18 +229,36 @@ export default function Payment() {
     setIsChecking(true);
 
     try {
-      // Simulate payment verification
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Check if payment was actually confirmed via webhook
+      const status = await checkPaymentStatus(taskId);
+      
+      if (status.payment_status === "paid" || status.status === "processing" || status.status === "completed") {
+        // Payment confirmed! Set up package if needed
+        if (isPacote) {
+          localStorage.setItem("packageSongsRemaining", "3");
+          localStorage.setItem("packageSongs", "[]");
+          setSongsRemaining(3);
+          setPackageSongs([]);
+        }
 
-      // For pacote first payment, set remaining songs to 2
-      if (isPacote) {
-        localStorage.setItem("packageSongsRemaining", "3");
-        localStorage.setItem("packageSongs", "[]");
-        setSongsRemaining(3);
-        setPackageSongs([]);
+        // If music is already processing or completed, start polling
+        if (status.status === "completed") {
+          setPaymentState("completed");
+          setIsChecking(false);
+          return;
+        }
+
+        await handleStartGeneration();
+      } else {
+        // Payment not yet confirmed, try to start anyway (webhook may have fired)
+        if (isPacote) {
+          localStorage.setItem("packageSongsRemaining", "3");
+          localStorage.setItem("packageSongs", "[]");
+          setSongsRemaining(3);
+          setPackageSongs([]);
+        }
+        await handleStartGeneration();
       }
-
-      await handleStartGeneration();
     } catch (error) {
       setIsChecking(false);
       toast({
@@ -349,37 +389,42 @@ export default function Payment() {
                   </p>
                 </div>
 
-                {/* QR Code */}
+                {/* Pagar via Abacate Pay */}
                 <div className="text-center mb-6">
                   <div className="inline-flex items-center gap-2 bg-mint/20 text-mint-foreground px-4 py-2 rounded-full text-sm font-medium mb-4">
                     <QrCode className="w-4 h-4" />
                     Pague via Pix
                   </div>
 
-                  <div className="bg-card border-2 border-dashed border-border rounded-2xl p-8 mx-auto max-w-xs mb-4">
-                    <div className="w-48 h-48 mx-auto bg-foreground/5 rounded-lg flex items-center justify-center">
-                      <div className="text-center">
-                        <QrCode className="w-24 h-24 mx-auto text-muted-foreground/50" />
-                        <p className="text-xs text-muted-foreground mt-2">QR Code Pix</p>
-                      </div>
+                  {isCreatingBilling ? (
+                    <div className="py-8">
+                      <motion.div
+                        className="text-4xl mb-4"
+                        animate={{ rotate: [0, 10, -10, 0] }}
+                        transition={{ duration: 1, repeat: Infinity }}
+                      >
+                        🥑
+                      </motion.div>
+                      <p className="text-muted-foreground text-sm">Preparando pagamento...</p>
                     </div>
-                  </div>
-
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Ou copie o código Pix abaixo:
-                  </p>
-
-                  <div className="relative">
-                    <div className="bg-muted rounded-xl p-4 pr-12 font-mono text-xs break-all text-left">
-                      {pixCode.substring(0, 50)}...
+                  ) : paymentUrl ? (
+                    <div className="space-y-4">
+                      <a
+                        href={paymentUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-2 w-full bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold py-4 px-8 rounded-2xl text-lg hover:scale-[1.02] transition-transform shadow-pink"
+                      >
+                        <QrCode className="w-5 h-5" />
+                        Pagar com Pix
+                      </a>
+                      <p className="text-xs text-muted-foreground">
+                        Você será redirecionado para a página de pagamento segura
+                      </p>
                     </div>
-                    <button
-                      onClick={copyPixCode}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-primary-foreground hover:scale-105 transition-transform"
-                    >
-                      {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
-                    </button>
-                  </div>
+                  ) : (
+                    <p className="text-muted-foreground text-sm py-4">Erro ao criar cobrança. Tente novamente.</p>
+                  )}
                 </div>
 
                 <MagicButton
