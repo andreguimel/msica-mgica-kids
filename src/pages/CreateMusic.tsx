@@ -281,24 +281,6 @@ export default function CreateMusic() {
                   )}
                 </AnimatePresence>
 
-                {/* Mensagem especial */}
-                <div>
-                  <label className="flex items-center gap-2 text-sm font-semibold mb-2">
-                    <MessageSquare className="w-4 h-4 text-mint" />
-                    Mensagem especial (opcional)
-                  </label>
-                  <Textarea
-                    placeholder="Ex: Feliz aniversário! Você é muito especial..."
-                    value={formData.specialMessage}
-                    onChange={(e) => setFormData({ ...formData, specialMessage: e.target.value })}
-                    className="rounded-xl border-2 border-border focus:border-primary resize-none"
-                    rows={3}
-                    maxLength={100}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {formData.specialMessage.length}/100 caracteres
-                  </p>
-                </div>
 
                 {/* Botão de submit */}
                 <MagicButton
