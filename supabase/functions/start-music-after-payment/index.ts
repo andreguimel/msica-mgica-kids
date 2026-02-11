@@ -83,10 +83,10 @@ serve(async (req) => {
     // Send lyrics to Kie.ai
     const style = (task.music_style && musicStyleTags[task.music_style]) || themeStyles[task.theme] || themeStyles.animais;
     // Generate HMAC token for callback verification
-    const KIE_API_KEY = Deno.env.get("KIE_API_KEY")!;
+    const kieKey = KIE_API_KEY!;
     const encoder = new TextEncoder();
     const keyData = await crypto.subtle.importKey(
-      "raw", encoder.encode(KIE_API_KEY), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+      "raw", encoder.encode(kieKey), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
     );
     const signature = await crypto.subtle.sign("HMAC", keyData, encoder.encode(taskId));
     const token = Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, "0")).join("");
