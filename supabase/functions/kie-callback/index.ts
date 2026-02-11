@@ -36,7 +36,34 @@ serve(async (req) => {
 
     const url = new URL(req.url);
     const internalId = url.searchParams.get("internalId");
+    const callbackToken = url.searchParams.get("token");
     let taskId = url.searchParams.get("taskId") || payload.data?.taskId;
+
+    // Verify callback token using HMAC
+    if (internalId && callbackToken) {
+      const KIE_API_KEY = Deno.env.get("KIE_API_KEY");
+      if (KIE_API_KEY) {
+        const encoder = new TextEncoder();
+        const keyData = await crypto.subtle.importKey(
+          "raw", encoder.encode(KIE_API_KEY), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
+        );
+        const expectedSig = await crypto.subtle.sign("HMAC", keyData, encoder.encode(internalId));
+        const expectedToken = Array.from(new Uint8Array(expectedSig)).map(b => b.toString(16).padStart(2, "0")).join("");
+        if (callbackToken !== expectedToken) {
+          console.error("Invalid callback token for internalId:", internalId);
+          return new Response(JSON.stringify({ status: "unauthorized" }), {
+            status: 401,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+    } else if (!taskId) {
+      console.error("No internalId or taskId in callback");
+      return new Response(JSON.stringify({ status: "error", message: "No task identifier" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Skip intermediate callbacks
     const callbackType = payload.data?.callbackType;
@@ -48,14 +75,6 @@ serve(async (req) => {
     }
 
     const status = payload.code === 200 ? "completed" : "failed";
-
-    if (!internalId && !taskId) {
-      console.error("No internalId or taskId in callback");
-      return new Response(JSON.stringify({ status: "error", message: "No task identifier" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
     let audioUrl: string | null = null;
     let errorMessage: string | null = null;
