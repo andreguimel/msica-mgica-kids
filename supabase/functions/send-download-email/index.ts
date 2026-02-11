@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { email, childName, accessCode, downloadUrl } = await req.json();
+    const { email, childName, accessCode, downloadUrl, lyrics } = await req.json();
 
     if (!email || !childName) {
       return new Response(
@@ -38,7 +38,11 @@ serve(async (req) => {
     .access-code { background: linear-gradient(135deg, #fce7f3, #ede9fe); border-radius: 16px; padding: 20px; margin: 24px 0; }
     .access-code p { color: #6b7280; font-size: 13px; margin: 0 0 8px; }
     .access-code .code { font-size: 32px; font-weight: 800; color: #ec4899; letter-spacing: 3px; margin: 0; }
-    .btn { display: inline-block; background: linear-gradient(135deg, #ec4899, #8b5cf6); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 16px; font-weight: 700; font-size: 16px; margin: 24px 0; }
+    .btn { display: inline-block; background: linear-gradient(135deg, #ec4899, #8b5cf6); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 16px; font-weight: 700; font-size: 16px; margin: 12px 0; }
+    .btn-secondary { display: inline-block; background: #f3f4f6; color: #374151; text-decoration: none; padding: 14px 32px; border-radius: 16px; font-weight: 600; font-size: 14px; margin: 8px 0; border: 2px solid #e5e7eb; }
+    .lyrics-box { background: #fefce8; border-radius: 16px; padding: 20px; margin: 24px 0; text-align: left; }
+    .lyrics-box h3 { color: #854d0e; font-size: 14px; margin: 0 0 12px; }
+    .lyrics-box pre { color: #713f12; font-size: 13px; line-height: 1.6; margin: 0; white-space: pre-wrap; font-family: 'Segoe UI', Arial, sans-serif; }
     .footer { text-align: center; color: #9ca3af; font-size: 12px; margin-top: 24px; }
   </style>
 </head>
@@ -57,8 +61,15 @@ serve(async (req) => {
       ` : ""}
       
       ${downloadUrl ? `
-      <a href="${downloadUrl}" class="btn">⬇️ Baixar Música</a>
+      <a href="${downloadUrl}" class="btn">⬇️ Baixar Música (MP3)</a>
       <p style="color: #9ca3af; font-size: 12px;">O link expira em 30 dias</p>
+      ` : ""}
+
+      ${lyrics ? `
+      <div class="lyrics-box">
+        <h3>📝 Letra da Música</h3>
+        <pre>${lyrics}</pre>
+      </div>
       ` : ""}
     </div>
     <p class="footer">
@@ -68,7 +79,6 @@ serve(async (req) => {
   </div>
 </body>
 </html>`;
-
     const brevoResponse = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {

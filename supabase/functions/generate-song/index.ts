@@ -62,9 +62,10 @@ Regras:
 - Use o nome "${childName}" de forma natural e melódica, como parte central das frases
 - Use linguagem simples e adequada para crianças de ${ageGroup} anos
 - O tema deve ser sobre: ${themeDesc}
-- Crie estrofes e refrões à vontade, sem limite de tamanho
+- A música deve ter no MÁXIMO 2 estrofes e 1 refrão (que se repete), totalizando cerca de 1 minuto e 30 segundos a 2 minutos e 30 segundos quando cantada
 - Cada estrofe deve ter 4 linhas
 - O refrão deve ter 4 linhas e ser bem cativante
+- Mantenha a letra curta, envolvente e fácil de memorizar
 - Use rimas AABB ou ABAB
 - NÃO use emojis na letra
 - NÃO inclua títulos ou marcações como "Estrofe 1" ou "Refrão"
