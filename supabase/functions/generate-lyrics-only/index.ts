@@ -47,12 +47,10 @@ Regras:
 - Use o nome "${childName}" de forma natural e melódica, como parte central das frases
 - Use linguagem simples e adequada para crianças de ${ageGroup} anos
 - O tema deve ser sobre: ${themeDesc}
-- IMPORTANTE: A letra deve ser para uma música de no máximo 2 minutos
-- Crie 2 estrofes + 1 refrão + 1 estrofe + refrão final
+- Crie estrofes e refrões à vontade, sem limite de tamanho
 - Cada estrofe deve ter 4 linhas
 - O refrão deve ter 4 linhas e ser bem cativante
 - Use rimas AABB ou ABAB
-- A letra deve ter entre 16 e 20 linhas no total (para caber em 2:00)
 - NÃO use emojis na letra
 - NÃO inclua títulos ou marcações como "Estrofe 1" ou "Refrão"
 - Retorne APENAS o texto da letra, sem explicações

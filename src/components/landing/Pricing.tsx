@@ -10,7 +10,7 @@ const plans = [
     description: "1 música personalizada completa",
     popular: true,
     features: [
-      "Música de 1-2 minutos",
+      "Música personalizada completa",
       "Letra personalizada com o nome",
       "Download MP3 + letra em texto",
       "Link exclusivo por 24h",

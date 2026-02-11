@@ -9,7 +9,7 @@ import {
 const faqs = [
   {
     question: "Quanto tempo leva para criar a música?",
-    answer: "A magia acontece em menos de 2 minutos! Nossa IA avançada gera a letra e a música personalizada rapidamente. Você pode pré-visualizar a letra antes de comprar. A música final tem até 2 minutos de duração.",
+    answer: "A magia acontece em menos de 2 minutos! Nossa IA avançada gera a letra e a música personalizada rapidamente. Você pode pré-visualizar a letra antes de comprar.",
   },
   {
     question: "Posso escolher o estilo da música?",
