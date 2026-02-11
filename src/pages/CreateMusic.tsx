@@ -9,6 +9,7 @@ import {
   MessageSquare,
   ArrowLeft,
   Music,
+  Mail,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -61,6 +62,7 @@ interface FormData {
   gender: string;
   theme: string;
   specialMessage: string;
+  userEmail: string;
 }
 
 export default function CreateMusic() {
@@ -73,6 +75,7 @@ export default function CreateMusic() {
     gender: "",
     theme: "",
     specialMessage: "",
+    userEmail: "",
   });
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
@@ -281,6 +284,24 @@ export default function CreateMusic() {
                   )}
                 </AnimatePresence>
 
+                {/* E-mail (opcional) */}
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-semibold mb-2">
+                    <Mail className="w-4 h-4 text-primary" />
+                    Seu e-mail (opcional)
+                  </label>
+                  <Input
+                    type="email"
+                    placeholder="seuemail@exemplo.com"
+                    value={formData.userEmail}
+                    onChange={(e) => setFormData({ ...formData, userEmail: e.target.value })}
+                    className="h-12 rounded-xl border-2 border-border focus:border-primary transition-colors"
+                    maxLength={100}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Enviaremos o link de download e código de acesso para seu e-mail
+                  </p>
+                </div>
 
                 {/* Botão de submit */}
                 <MagicButton

@@ -164,6 +164,37 @@ serve(async (req) => {
     }
 
 
+    // Send email if user provided one
+    if (audioUrl && (downloadUrl || audioUrl)) {
+      try {
+        const { data: taskData } = await supabase
+          .from("music_tasks")
+          .select("user_email, child_name, access_code, download_url")
+          .eq(updateColumn, updateValue)
+          .single();
+
+        if (taskData?.user_email) {
+          console.log("Sending download email to:", taskData.user_email);
+          const emailResponse = await fetch(`${SUPABASE_URL}/functions/v1/send-download-email`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            },
+            body: JSON.stringify({
+              email: taskData.user_email,
+              childName: taskData.child_name,
+              accessCode: taskData.access_code,
+              downloadUrl: taskData.download_url,
+            }),
+          });
+          console.log("Email send result:", emailResponse.status);
+        }
+      } catch (emailError) {
+        console.error("Email send error (non-fatal):", emailError);
+      }
+    }
+
     return new Response(JSON.stringify({ status: "received" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
