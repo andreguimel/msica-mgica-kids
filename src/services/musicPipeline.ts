@@ -68,11 +68,22 @@ export async function saveCustomLyrics(params: GenerateLyricsParams & { customLy
   return { taskId: data.taskId };
 }
 
-export async function createBilling(taskId: string, plan: string): Promise<{ billingId: string; paymentUrl: string }> {
+export async function createBilling(
+  taskId: string,
+  plan: string,
+  customerData?: { name: string; email: string; cpf: string }
+): Promise<{ billingId: string; paymentUrl: string }> {
   const response = await fetch(`${SUPABASE_URL}/functions/v1/create-billing`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ taskId, plan, origin: window.location.origin }),
+    body: JSON.stringify({
+      taskId,
+      plan,
+      origin: window.location.origin,
+      customerName: customerData?.name,
+      customerEmail: customerData?.email,
+      customerCpf: customerData?.cpf,
+    }),
   });
 
   if (!response.ok) {
