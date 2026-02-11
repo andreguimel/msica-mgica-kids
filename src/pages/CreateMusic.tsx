@@ -97,6 +97,10 @@ export default function CreateMusic() {
       toast({ title: "Opa! 🎵", description: "Escolha um tema favorito", variant: "destructive" });
       return;
     }
+    if (!formData.userEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.userEmail)) {
+      toast({ title: "Opa! 🎵", description: "Digite um e-mail válido", variant: "destructive" });
+      return;
+    }
 
     setIsLoading(true);
 
@@ -284,11 +288,11 @@ export default function CreateMusic() {
                   )}
                 </AnimatePresence>
 
-                {/* E-mail (opcional) */}
+                {/* E-mail */}
                 <div>
                   <label className="flex items-center gap-2 text-sm font-semibold mb-2">
                     <Mail className="w-4 h-4 text-primary" />
-                    Seu e-mail (opcional)
+                    Seu e-mail *
                   </label>
                   <Input
                     type="email"
@@ -297,6 +301,7 @@ export default function CreateMusic() {
                     onChange={(e) => setFormData({ ...formData, userEmail: e.target.value })}
                     className="h-12 rounded-xl border-2 border-border focus:border-primary transition-colors"
                     maxLength={100}
+                    required
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     Enviaremos o link de download e código de acesso para seu e-mail
