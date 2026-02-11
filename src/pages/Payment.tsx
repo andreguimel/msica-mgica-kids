@@ -17,6 +17,7 @@ import { FloatingElements } from "@/components/ui/FloatingElements";
 import { useToast } from "@/hooks/use-toast";
 import { createBilling, startMusicAfterPayment, pollTaskStatus, checkPaymentStatus } from "@/services/musicPipeline";
 import SongDownloads from "@/components/SongDownloads";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface MusicData {
   childName: string;
@@ -79,6 +80,7 @@ export default function Payment() {
   const [stopPolling, setStopPolling] = useState<(() => void) | null>(null);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [isCreatingBilling, setIsCreatingBilling] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const selectedPlan = localStorage.getItem("selectedPlan") || "single";
   const plan = planInfo[selectedPlan as keyof typeof planInfo];
@@ -409,11 +411,41 @@ export default function Payment() {
                     </div>
                   ) : paymentUrl ? (
                     <div className="space-y-4">
+                      <div className="flex items-start gap-3 text-left bg-muted/50 rounded-xl p-4">
+                        <Checkbox
+                          id="terms"
+                          checked={agreedToTerms}
+                          onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
+                          className="mt-0.5"
+                        />
+                        <label htmlFor="terms" className="text-sm text-muted-foreground cursor-pointer leading-relaxed">
+                          Li e concordo com os{" "}
+                          <a href="/termos" target="_blank" className="text-primary underline hover:text-primary/80">
+                            Termos de Uso
+                          </a>{" "}
+                          e a{" "}
+                          <a href="/privacidade" target="_blank" className="text-primary underline hover:text-primary/80">
+                            Política de Privacidade
+                          </a>.
+                        </label>
+                      </div>
                       <a
-                        href={paymentUrl}
+                        href={agreedToTerms ? paymentUrl : undefined}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center gap-2 w-full bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold py-4 px-8 rounded-2xl text-lg hover:scale-[1.02] transition-transform shadow-pink"
+                        onClick={(e) => {
+                          if (!agreedToTerms) {
+                            e.preventDefault();
+                            toast({
+                              title: "Aceite os termos",
+                              description: "Você precisa concordar com os Termos de Uso e Política de Privacidade para continuar.",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                        className={`inline-flex items-center justify-center gap-2 w-full bg-gradient-to-r from-primary to-secondary text-primary-foreground font-bold py-4 px-8 rounded-2xl text-lg transition-transform shadow-pink ${
+                          agreedToTerms ? "hover:scale-[1.02] opacity-100" : "opacity-50 cursor-not-allowed"
+                        }`}
                       >
                         <QrCode className="w-5 h-5" />
                         Pagar com Pix
