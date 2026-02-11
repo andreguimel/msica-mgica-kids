@@ -11,7 +11,7 @@ export function Footer() {
           {/* Logo e descrição */}
           <div>
             <h3 className="text-2xl font-baloo font-bold mb-4 text-gradient bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              🎵 Música Mágica
+              𝄞 Música Mágica
             </h3>
             <p className="text-primary-foreground/70 text-sm">
               Criamos músicas personalizadas com IA para fazer crianças felizes. 
