@@ -53,10 +53,12 @@ export default function Preview() {
   const handleSaveLyrics = async () => {
     setIsSaving(true);
     try {
-      await supabase
-        .from("music_tasks")
-        .update({ lyrics: editedLyrics })
-        .eq("id", taskId);
+      const { data, error } = await supabase.functions.invoke("update-lyrics", {
+        body: { taskId, lyrics: editedLyrics },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       const updated = { ...result, lyrics: editedLyrics };
       setResult(updated);
