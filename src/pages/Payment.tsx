@@ -679,7 +679,26 @@ export default function Payment() {
                         De R$ 19,80
                       </span>
                     </p>
-                    <MagicButton variant="accent" size="md">
+                    <MagicButton
+                      variant="accent"
+                      size="md"
+                      onClick={() => {
+                        localStorage.setItem("selectedPlan", "pacote");
+                        localStorage.setItem("packageSongsRemaining", "2");
+                        const currentSongs = getPackageSongs();
+                        if (musicData && audioUrl) {
+                          const alreadyHas = currentSongs.some(s => s.childName === musicData.childName);
+                          if (!alreadyHas) {
+                            savePackageSong({ childName: musicData.childName, audioUrl });
+                            setPackageSongs(getPackageSongs());
+                          }
+                        }
+                        localStorage.removeItem("musicResult");
+                        localStorage.removeItem("musicData");
+                        localStorage.removeItem("musicTaskId");
+                        navigate("/criar");
+                      }}
+                    >
                       Quero mais músicas!
                     </MagicButton>
                   </div>
