@@ -27,6 +27,7 @@ export type Database = {
           error_message: string | null
           id: string
           lyrics: string | null
+          music_style: string | null
           payment_status: string | null
           payment_url: string | null
           status: string
@@ -47,6 +48,7 @@ export type Database = {
           error_message?: string | null
           id?: string
           lyrics?: string | null
+          music_style?: string | null
           payment_status?: string | null
           payment_url?: string | null
           status?: string
@@ -67,6 +69,7 @@ export type Database = {
           error_message?: string | null
           id?: string
           lyrics?: string | null
+          music_style?: string | null
           payment_status?: string | null
           payment_url?: string | null
           status?: string
