@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   const origin = req.headers.get("origin") || "";
-  const allowedOrigins = ["lovable.app", "lovableproject.com", "localhost", "musicamagica.com"];
+  const allowedOrigins = ["lovable.app", "lovableproject.com", "localhost", "musicamagica.com", "vercel.app"];
   if (!allowedOrigins.some((o) => origin.includes(o))) {
     return new Response(JSON.stringify({ error: "Forbidden" }), {
       status: 403,
