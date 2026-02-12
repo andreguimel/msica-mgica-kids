@@ -149,7 +149,7 @@ export default function Payment() {
 
   // Admin bypass via URL parameter ?admin=SECRET
   useEffect(() => {
-    if (!taskId || paymentState !== "form" || isPackageSong) return;
+    if (!taskId || paymentState !== "form") return;
     const params = new URLSearchParams(window.location.search);
     const adminSecret = params.get("admin");
     if (!adminSecret) return;
