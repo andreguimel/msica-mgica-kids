@@ -46,15 +46,18 @@ serve(async (req) => {
   }
 
   try {
-    const { taskId } = await req.json();
+    const { taskId, adminSecret } = await req.json();
 
     const KIE_API_KEY = Deno.env.get("KIE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const ADMIN_SECRET = Deno.env.get("ADMIN_SECRET");
 
     if (!KIE_API_KEY) throw new Error("KIE_API_KEY not configured");
     if (!SUPABASE_URL) throw new Error("SUPABASE_URL not configured");
     if (!SUPABASE_SERVICE_ROLE_KEY) throw new Error("SUPABASE_SERVICE_ROLE_KEY not configured");
+
+    const isAdminBypass = adminSecret && ADMIN_SECRET && adminSecret === ADMIN_SECRET;
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -72,12 +75,21 @@ serve(async (req) => {
       );
     }
 
-    // Validate status
-    if (task.status !== "awaiting_payment") {
+    // Validate status (skip for admin bypass)
+    if (!isAdminBypass && task.status !== "awaiting_payment") {
       return new Response(
         JSON.stringify({ error: `Invalid task status: ${task.status}. Expected awaiting_payment.` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // If admin bypass, mark as paid
+    if (isAdminBypass) {
+      await supabase
+        .from("music_tasks")
+        .update({ payment_status: "paid" })
+        .eq("id", taskId);
+      console.log("Admin bypass: payment marked as paid for task", taskId);
     }
 
     // Send lyrics to Kie.ai
