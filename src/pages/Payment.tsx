@@ -159,6 +159,13 @@ export default function Payment() {
       try {
         await adminBypassPayment(taskId, adminSecret);
         if (!cancelled) {
+          // Initialize package state if it's a package plan
+          if (isPacote && songsRemaining === 0) {
+            localStorage.setItem("packageSongsRemaining", "3");
+            localStorage.setItem("packageSongs", "[]");
+            setSongsRemaining(3);
+            setPackageSongs([]);
+          }
           await handleStartGeneration();
         }
       } catch (e) {
