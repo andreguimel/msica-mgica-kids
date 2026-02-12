@@ -194,6 +194,7 @@ export default function MyMusic() {
                           childName={song.childName}
                           audioUrl={song.audioUrl}
                           lyrics={song.lyrics}
+                          theme={song.theme}
                         />
                       </>
                     ) : null}
