@@ -1,57 +1,43 @@
 
 
-## Gerar Video para Redes Sociais (Imagem + Audio = MP4)
+## Bypass Admin via URL Secreta
 
-### Resumo
+### Abordagem mais simples
 
-Adicionar um botao "Baixar Video" no componente `SongDownloads`, ao lado dos botoes de download existentes. O usuario escolhe o formato (quadrado ou stories) e o sistema gera um MP4 no navegador usando FFmpeg WASM.
+Em vez de criar uma nova edge function e UI de admin, basta usar uma **URL secreta** que pula direto para a geracao. Voce acessa a pagina de pagamento com um parametro especial na URL e o sistema inicia a musica sem cobrar.
 
-### O que o usuario ve
+### Como funciona
 
-1. Clica em "Baixar Video para Redes Sociais"
-2. Escolhe o formato:
-   - **Quadrado (1080x1080)** - Instagram Feed, Facebook
-   - **Stories (1080x1920)** - Instagram Stories, TikTok, WhatsApp Status
-3. Barra de progresso aparece (~10-30s)
-4. Download automatico do MP4
+1. Voce acessa a pagina de pagamento normalmente (cria a letra, vai para preview, clica em "Gerar Musica")
+2. Na URL da pagina de pagamento, adiciona `?admin=SUA_SENHA_SECRETA`
+   - Exemplo: `https://seusite.com/pagamento?admin=MinhaSenha123`
+3. O sistema detecta o parametro, envia a senha para o backend que valida
+4. Se valida, marca como pago e inicia a geracao automaticamente
+5. Nenhum formulario de pagamento aparece
 
 ### Detalhes tecnicos
 
-**Nova dependencia:** `@ffmpeg/ffmpeg` + `@ffmpeg/util`
+**Novo secret: `ADMIN_SECRET`**
+- Voce define uma senha (ex: "MagicaAdmin2025")
+- Armazenada de forma segura no backend
 
-**Novo arquivo: `src/components/VideoGenerator.tsx`**
-- Recebe `childName`, `audioUrl`, `theme`, `format` (square | stories)
-- Gera imagem de capa via Canvas API offscreen:
-  - Gradiente de fundo nas cores do tema
-  - Nome da crianca centralizado
-  - Emojis decorativos do tema
-  - Logo "Musica Magica" discreto
-- FFmpeg WASM combina imagem + audio em MP4 (H.264 + AAC)
-- Mostra progresso e dispara download
+**Modificacao: `supabase/functions/start-music-after-payment/index.ts`**
+- Aceitar parametro opcional `adminSecret` no body da requisicao
+- Se `adminSecret` for enviado e coincidir com o secret `ADMIN_SECRET`, pular a validacao de status (nao exigir `awaiting_payment`)
+- Atualizar `payment_status` para "paid" automaticamente antes de enviar ao Kie.ai
 
-**Temas visuais:**
+**Modificacao: `src/pages/Payment.tsx`**
+- No `useEffect` inicial, verificar se existe `?admin=XXXXX` na URL
+- Se existir, chamar uma nova funcao `adminBypassPayment(taskId, secret)` que envia o secret ao backend
+- Se o backend retornar sucesso, pular direto para o estado "confirmed" e seguir o fluxo normal de geracao
+- Se falhar (senha errada), seguir o fluxo normal de pagamento
 
-```text
-animais      -> amarelo/verde     + patas, coracoes
-princesas    -> rosa/roxo         + coroas, estrelas
-espaco       -> azul escuro/roxo  + estrelas, planetas
-dinossauros  -> verde/marrom      + pegadas, folhas
-futebol      -> verde/branco      + bolas, estrelas
-fadas        -> lilas/rosa        + varinhas, borboletas
-natureza     -> verde/azul        + flores, folhas
-super-herois -> azul/vermelho     + raios, estrelas
-```
+**Modificacao: `src/services/musicPipeline.ts`**
+- Adicionar funcao `adminBypassPayment(taskId: string, adminSecret: string)` que chama `start-music-after-payment` passando o `adminSecret` no body
 
-**Modificacao: `src/components/SongDownloads.tsx`**
-- Adicionar prop `theme?: string`
-- Adicionar botao "Baixar Video para Redes Sociais" abaixo do botao de WhatsApp
-- Ao clicar, abre um pequeno seletor de formato (quadrado/stories) e inicia a geracao
-
-**Modificacao: `src/pages/MyMusic.tsx`**
-- Passar `theme={song.theme}` para o componente `SongDownloads`
-
-### Compatibilidade
-- Chrome, Firefox, Edge: funciona
-- Safari 16.4+: funciona
-- Se o navegador nao suportar SharedArrayBuffer, o botao fica oculto
+### Seguranca
+- A senha nunca fica no codigo-fonte do frontend (so e passada pela URL no momento do uso)
+- Validacao acontece 100% no servidor
+- URL com o parametro admin nao e compartilhada com clientes
+- Tentativas com senha errada retornam erro e seguem o fluxo normal
 
