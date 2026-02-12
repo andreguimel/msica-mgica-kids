@@ -1,20 +1,28 @@
 
 
-## Bypass Admin para Pacote
+## Adicionar mais repetições nas letras geradas
 
-### Problema atual
+Atualizar o prompt de geração de letras para que a IA crie músicas com mais repetições, tornando-as mais fáceis de decorar para as crianças.
 
-O bypass admin (`?admin=SENHA`) so funciona para a musica avulsa. Musicas do pacote sao bloqueadas pela condicao `isPackageSong` no useEffect.
+### O que muda
 
-### Solucao
+O prompt na função de geração de letras será ajustado para instruir a IA a:
 
-Remover a restricao `isPackageSong` do useEffect de bypass admin, permitindo que o parametro `?admin=` funcione tanto para musica avulsa quanto para o pacote.
+- Repetir o refrão 2 vezes na estrutura da música (Estrofe 1 > Refrão > Estrofe 2 > Refrão)
+- Usar frases-chave repetidas dentro das estrofes
+- Criar um refrão mais curto e repetitivo (estilo "canta comigo")
+- Manter a duração total entre 1:30 e 2:30 minutos
 
-### Detalhes tecnicos
+### Detalhes técnicos
 
-**Modificacao: `src/pages/Payment.tsx`**
-- Linha 152: remover `|| isPackageSong` da condicao do useEffect de bypass admin
-- Isso permite que o bypass funcione para qualquer tipo de musica (avulsa ou pacote)
+**Arquivo:** `supabase/functions/generate-lyrics-only/index.ts`
 
-A logica do backend ja suporta isso, pois o `start-music-after-payment` com `adminSecret` apenas valida o secret e marca como pago, independente do tipo de compra.
+Alterar o `systemPrompt` para enfatizar repetições:
+
+- Estrutura: Estrofe 1 + Refrão + Estrofe 2 + Refrão (refrão aparece 2 vezes)
+- O refrão deve ter frases que se repetem (ex: mesma frase cantada 2x seguidas)
+- Usar repetições naturais dentro das estrofes (ex: "Vamos lá, vamos lá!")
+- Manter linguagem simples e cativante
+
+Nenhuma outra alteração necessária -- a mudança é apenas no texto do prompt.
 
