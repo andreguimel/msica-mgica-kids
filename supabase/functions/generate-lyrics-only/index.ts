@@ -49,7 +49,7 @@ serve(async (req) => {
 
     const themeDesc = themeDescriptions[theme] || themeDescriptions.animais;
 
-    const systemPrompt = `Você é um compositor de músicas infantis em português brasileiro. Crie letras alegres, rimadas e fáceis de cantar para crianças.
+    const systemPrompt = `Você é um compositor de músicas infantis em português brasileiro. Crie letras alegres, rimadas, repetitivas e fáceis de decorar para crianças.
 
 Regras:
 - O NOME "${childName}" é o elemento MAIS IMPORTANTE da música. Ele DEVE aparecer pelo menos 5 vezes, incluindo no refrão
@@ -57,10 +57,17 @@ Regras:
 - Use o nome "${childName}" de forma natural e melódica, como parte central das frases
 - Use linguagem simples e adequada para crianças de ${ageGroup} anos
 - O tema deve ser sobre: ${themeDesc}
-- A música deve ter no MÁXIMO 2 estrofes e 1 refrão (que se repete), totalizando cerca de 1 minuto e 30 segundos a 2 minutos e 30 segundos quando cantada
-- Cada estrofe deve ter 4 linhas
-- O refrão deve ter 4 linhas e ser bem cativante
-- Mantenha a letra curta, envolvente e fácil de memorizar
+
+ESTRUTURA OBRIGATÓRIA (com repetições para facilitar a memorização):
+- Estrofe 1 (4 linhas) → Refrão (4 linhas) → Estrofe 2 (4 linhas) → Refrão (mesmas 4 linhas, repetido igual)
+- O refrão DEVE ser repetido 2 vezes na música (após cada estrofe), com o MESMO texto
+- A duração total deve ser de 1 minuto e 30 segundos a 2 minutos e 30 segundos quando cantada
+
+REPETIÇÕES (muito importante!):
+- O refrão deve ter frases curtas e repetitivas, estilo "canta comigo" (ex: repetir a mesma frase 2x seguidas dentro do refrão)
+- Dentro das estrofes, use repetições naturais de frases-chave (ex: "Vamos lá, vamos lá!", "Olha só, olha só!")
+- Priorize frases curtas e fáceis de cantar junto
+
 - Use rimas AABB ou ABAB
 - NÃO use emojis na letra
 - NÃO inclua títulos ou marcações como "Estrofe 1" ou "Refrão"
