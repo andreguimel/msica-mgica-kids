@@ -1,43 +1,20 @@
 
 
-## Bypass Admin via URL Secreta
+## Bypass Admin para Pacote
 
-### Abordagem mais simples
+### Problema atual
 
-Em vez de criar uma nova edge function e UI de admin, basta usar uma **URL secreta** que pula direto para a geracao. Voce acessa a pagina de pagamento com um parametro especial na URL e o sistema inicia a musica sem cobrar.
+O bypass admin (`?admin=SENHA`) so funciona para a musica avulsa. Musicas do pacote sao bloqueadas pela condicao `isPackageSong` no useEffect.
 
-### Como funciona
+### Solucao
 
-1. Voce acessa a pagina de pagamento normalmente (cria a letra, vai para preview, clica em "Gerar Musica")
-2. Na URL da pagina de pagamento, adiciona `?admin=SUA_SENHA_SECRETA`
-   - Exemplo: `https://seusite.com/pagamento?admin=MinhaSenha123`
-3. O sistema detecta o parametro, envia a senha para o backend que valida
-4. Se valida, marca como pago e inicia a geracao automaticamente
-5. Nenhum formulario de pagamento aparece
+Remover a restricao `isPackageSong` do useEffect de bypass admin, permitindo que o parametro `?admin=` funcione tanto para musica avulsa quanto para o pacote.
 
 ### Detalhes tecnicos
 
-**Novo secret: `ADMIN_SECRET`**
-- Voce define uma senha (ex: "MagicaAdmin2025")
-- Armazenada de forma segura no backend
-
-**Modificacao: `supabase/functions/start-music-after-payment/index.ts`**
-- Aceitar parametro opcional `adminSecret` no body da requisicao
-- Se `adminSecret` for enviado e coincidir com o secret `ADMIN_SECRET`, pular a validacao de status (nao exigir `awaiting_payment`)
-- Atualizar `payment_status` para "paid" automaticamente antes de enviar ao Kie.ai
-
 **Modificacao: `src/pages/Payment.tsx`**
-- No `useEffect` inicial, verificar se existe `?admin=XXXXX` na URL
-- Se existir, chamar uma nova funcao `adminBypassPayment(taskId, secret)` que envia o secret ao backend
-- Se o backend retornar sucesso, pular direto para o estado "confirmed" e seguir o fluxo normal de geracao
-- Se falhar (senha errada), seguir o fluxo normal de pagamento
+- Linha 152: remover `|| isPackageSong` da condicao do useEffect de bypass admin
+- Isso permite que o bypass funcione para qualquer tipo de musica (avulsa ou pacote)
 
-**Modificacao: `src/services/musicPipeline.ts`**
-- Adicionar funcao `adminBypassPayment(taskId: string, adminSecret: string)` que chama `start-music-after-payment` passando o `adminSecret` no body
-
-### Seguranca
-- A senha nunca fica no codigo-fonte do frontend (so e passada pela URL no momento do uso)
-- Validacao acontece 100% no servidor
-- URL com o parametro admin nao e compartilhada com clientes
-- Tentativas com senha errada retornam erro e seguem o fluxo normal
+A logica do backend ja suporta isso, pois o `start-music-after-payment` com `adminSecret` apenas valida o secret e marca como pago, independente do tipo de compra.
 
