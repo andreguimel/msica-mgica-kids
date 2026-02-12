@@ -19,7 +19,7 @@ import {
 import { MagicButton } from "@/components/ui/MagicButton";
 import { FloatingElements } from "@/components/ui/FloatingElements";
 import { useToast } from "@/hooks/use-toast";
-import { createBilling, createUpsellBilling, startMusicAfterPayment, pollTaskStatus, checkPaymentStatus } from "@/services/musicPipeline";
+import { createBilling, createUpsellBilling, startMusicAfterPayment, adminBypassPayment, pollTaskStatus, checkPaymentStatus } from "@/services/musicPipeline";
 import SongDownloads from "@/components/SongDownloads";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -146,6 +146,29 @@ export default function Payment() {
       navigate("/criar");
     }
   }, [navigate]);
+
+  // Admin bypass via URL parameter ?admin=SECRET
+  useEffect(() => {
+    if (!taskId || paymentState !== "form" || isPackageSong) return;
+    const params = new URLSearchParams(window.location.search);
+    const adminSecret = params.get("admin");
+    if (!adminSecret) return;
+
+    let cancelled = false;
+    const doBypass = async () => {
+      try {
+        await adminBypassPayment(taskId, adminSecret);
+        if (!cancelled) {
+          await handleStartGeneration();
+        }
+      } catch (e) {
+        console.log("Admin bypass failed, continuing normal flow:", e);
+      }
+    };
+    doBypass();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskId, paymentState]);
 
   // Auto-start generation for package follow-up songs (already paid)
   useEffect(() => {

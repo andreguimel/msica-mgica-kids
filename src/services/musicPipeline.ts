@@ -123,6 +123,20 @@ export async function startMusicAfterPayment(taskId: string): Promise<void> {
   }
 }
 
+// Admin bypass: skip payment and start generation directly
+export async function adminBypassPayment(taskId: string, adminSecret: string): Promise<void> {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/start-music-after-payment`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ taskId, adminSecret }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: "Erro no bypass admin" }));
+    throw new Error(error.error || `Erro ${response.status}`);
+  }
+}
+
 // Check payment status from database
 export async function checkPaymentStatus(taskId: string): Promise<{ payment_status: string; status: string }> {
   const response = await fetch(`${SUPABASE_URL}/functions/v1/check-task`, {
