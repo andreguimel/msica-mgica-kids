@@ -849,6 +849,7 @@ export default function Payment() {
                       childName={musicData.childName}
                       audioUrl={audioUrl}
                       lyrics={lyrics}
+                      theme={musicData.theme}
                     />
                   )}
 
