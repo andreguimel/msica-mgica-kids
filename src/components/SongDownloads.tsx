@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Download, FileText, MessageCircle } from "lucide-react";
+import { Download, FileText, MessageCircle, Video } from "lucide-react";
 import { MagicButton } from "@/components/ui/MagicButton";
+import VideoGenerator from "@/components/VideoGenerator";
 
 interface SongDownloadsProps {
   childName: string;
   audioUrl: string;
   lyrics?: string | null;
+  theme?: string;
 }
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -24,8 +26,9 @@ function downloadLyrics(lyrics: string, childName: string) {
   downloadBlob(blob, `${childName} - Letra.txt`);
 }
 
-export default function SongDownloads({ childName, audioUrl, lyrics }: SongDownloadsProps) {
+export default function SongDownloads({ childName, audioUrl, lyrics, theme }: SongDownloadsProps) {
   const [sharing, setSharing] = useState(false);
+  const [showVideoGen, setShowVideoGen] = useState(false);
 
   const handleWhatsAppShare = async () => {
     setSharing(true);
@@ -96,6 +99,26 @@ export default function SongDownloads({ childName, audioUrl, lyrics }: SongDownl
         <MessageCircle className="w-5 h-5" />
         {sharing ? "Preparando..." : "Enviar pelo WhatsApp"}
       </button>
+
+      {/* Video download */}
+      {theme && typeof SharedArrayBuffer !== "undefined" && (
+        <button
+          onClick={() => setShowVideoGen(true)}
+          className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-accent/30 bg-accent/10 hover:bg-accent/20 text-accent-foreground font-bold py-3 px-4 transition-colors"
+        >
+          <Video className="w-5 h-5" />
+          Baixar Vídeo para Redes Sociais
+        </button>
+      )}
+
+      {showVideoGen && theme && (
+        <VideoGenerator
+          childName={childName}
+          audioUrl={audioUrl}
+          theme={theme}
+          onClose={() => setShowVideoGen(false)}
+        />
+      )}
     </div>
   );
 }
