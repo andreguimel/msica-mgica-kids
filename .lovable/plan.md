@@ -1,33 +1,57 @@
 
-## Compartilhar Música pelo WhatsApp
 
-### O que muda
-Adicionar um botao "Enviar pelo WhatsApp" nas telas onde o usuario tem acesso a musica gerada: a pagina **Minhas Musicas** e o componente **SongDownloads**.
+## Gerar Video para Redes Sociais (Imagem + Audio = MP4)
 
-### Como funciona
+### Resumo
 
-**No celular (Android/iOS):**
-- Usa a **Web Share API** nativa do navegador
-- Permite compartilhar o arquivo MP3 diretamente como anexo no WhatsApp
-- O destinatario recebe o audio pronto para ouvir, sem precisar clicar em links
+Adicionar um botao "Baixar Video" no componente `SongDownloads`, ao lado dos botoes de download existentes. O usuario escolhe o formato (quadrado ou stories) e o sistema gera um MP4 no navegador usando FFmpeg WASM.
 
-**No PC (desktop):**
-- Abre o WhatsApp Web via `https://wa.me/?text=...`
-- Envia uma mensagem com o link de download da musica
-- Mensagem personalizada: "Olha a musica que criei para [nome]! Ouca aqui: [link]"
+### O que o usuario ve
+
+1. Clica em "Baixar Video para Redes Sociais"
+2. Escolhe o formato:
+   - **Quadrado (1080x1080)** - Instagram Feed, Facebook
+   - **Stories (1080x1920)** - Instagram Stories, TikTok, WhatsApp Status
+3. Barra de progresso aparece (~10-30s)
+4. Download automatico do MP4
 
 ### Detalhes tecnicos
 
-**Arquivo modificado: `src/components/SongDownloads.tsx`**
-- Adicionar botao verde "Enviar pelo WhatsApp" com icone do WhatsApp (via lucide `MessageCircle` estilizado em verde)
-- Detectar se o navegador suporta `navigator.share` com `navigator.canShare` para decidir a abordagem
-- No celular: baixar o MP3 como blob, criar um `File` object e usar `navigator.share({ files: [file] })`
-- No desktop (fallback): abrir `https://wa.me/?text=` com mensagem e link do audio codificados
+**Nova dependencia:** `@ffmpeg/ffmpeg` + `@ffmpeg/util`
 
-**Fluxo do usuario:**
-1. Usuario clica em "Enviar pelo WhatsApp"
-2. **Se estiver no celular**: abre o seletor nativo do sistema -> escolhe WhatsApp -> envia o MP3 como audio
-3. **Se estiver no PC**: abre uma nova aba do WhatsApp Web com a mensagem pre-preenchida contendo o link
+**Novo arquivo: `src/components/VideoGenerator.tsx`**
+- Recebe `childName`, `audioUrl`, `theme`, `format` (square | stories)
+- Gera imagem de capa via Canvas API offscreen:
+  - Gradiente de fundo nas cores do tema
+  - Nome da crianca centralizado
+  - Emojis decorativos do tema
+  - Logo "Musica Magica" discreto
+- FFmpeg WASM combina imagem + audio em MP4 (H.264 + AAC)
+- Mostra progresso e dispara download
 
-### Layout do botao
-O botao sera posicionado logo abaixo dos botoes de download existentes, com estilo verde (#25D366) para ser reconhecido como WhatsApp, usando bordas arredondadas consistentes com o design atual.
+**Temas visuais:**
+
+```text
+animais      -> amarelo/verde     + patas, coracoes
+princesas    -> rosa/roxo         + coroas, estrelas
+espaco       -> azul escuro/roxo  + estrelas, planetas
+dinossauros  -> verde/marrom      + pegadas, folhas
+futebol      -> verde/branco      + bolas, estrelas
+fadas        -> lilas/rosa        + varinhas, borboletas
+natureza     -> verde/azul        + flores, folhas
+super-herois -> azul/vermelho     + raios, estrelas
+```
+
+**Modificacao: `src/components/SongDownloads.tsx`**
+- Adicionar prop `theme?: string`
+- Adicionar botao "Baixar Video para Redes Sociais" abaixo do botao de WhatsApp
+- Ao clicar, abre um pequeno seletor de formato (quadrado/stories) e inicia a geracao
+
+**Modificacao: `src/pages/MyMusic.tsx`**
+- Passar `theme={song.theme}` para o componente `SongDownloads`
+
+### Compatibilidade
+- Chrome, Firefox, Edge: funciona
+- Safari 16.4+: funciona
+- Se o navegador nao suportar SharedArrayBuffer, o botao fica oculto
+
