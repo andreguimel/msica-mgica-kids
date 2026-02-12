@@ -101,7 +101,7 @@ export default function SongDownloads({ childName, audioUrl, lyrics, theme }: So
       </button>
 
       {/* Video download */}
-      {theme && typeof SharedArrayBuffer !== "undefined" && (
+      {theme && (
         <button
           onClick={() => setShowVideoGen(true)}
           className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-accent/30 bg-accent/10 hover:bg-accent/20 text-accent-foreground font-bold py-3 px-4 transition-colors"
