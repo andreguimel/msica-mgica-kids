@@ -51,6 +51,19 @@ const planInfo = {
   pacote: { label: "Pacote Encantado", price: "24,90", priceNum: "24.90", description: "3 músicas personalizadas" },
 };
 
+const VALID_COUPON = "MAGICA10";
+const DISCOUNT_PERCENT = 10;
+
+function getExitCoupon(): string | null {
+  return localStorage.getItem("exitCoupon");
+}
+
+function applyDiscount(priceStr: string, discountPct: number): string {
+  const price = parseFloat(priceStr.replace(",", "."));
+  const discounted = price * (1 - discountPct / 100);
+  return discounted.toFixed(2).replace(".", ",");
+}
+
 function getPackageSongsRemaining(): number {
   return parseInt(localStorage.getItem("packageSongsRemaining") || "0", 10);
 }
@@ -128,6 +141,9 @@ export default function Payment() {
   const selectedPlan = localStorage.getItem("selectedPlan") || "single";
   const plan = planInfo[selectedPlan as keyof typeof planInfo];
   const isPacote = selectedPlan === "pacote";
+  const appliedCoupon = getExitCoupon();
+  const hasDiscount = appliedCoupon === VALID_COUPON;
+  const displayPrice = hasDiscount ? applyDiscount(plan.price, DISCOUNT_PERCENT) : plan.price;
   const [songsRemaining, setSongsRemaining] = useState(getPackageSongsRemaining());
   const [packageSongs, setPackageSongs] = useState<PackageSong[]>(getPackageSongs());
   const isPackageSong = isPacote && songsRemaining > 0;
@@ -370,11 +386,14 @@ export default function Payment() {
     setIsCreatingBilling(true);
     try {
       const cpfDigits = parentCpf.replace(/\D/g, "");
-      const result = await createBilling(taskId, selectedPlan, {
-        name: parentName.trim(),
-        email: parentEmail.trim(),
-        cpf: cpfDigits,
-      });
+      const result = await createBilling(
+        taskId,
+        selectedPlan,
+        { name: parentName.trim(), email: parentEmail.trim(), cpf: cpfDigits },
+        hasDiscount ? DISCOUNT_PERCENT : undefined
+      );
+      // Coupon has been used — clear it
+      if (hasDiscount) localStorage.removeItem("exitCoupon");
       setBrCode(result.brCode);
       setPaymentState("qrcode");
 
@@ -572,9 +591,19 @@ export default function Payment() {
                   <p className="text-muted-foreground text-sm mb-4">
                     {plan.description}
                   </p>
+                  {hasDiscount && (
+                    <p className="text-lg text-muted-foreground line-through">
+                      R$ {plan.price}
+                    </p>
+                  )}
                   <p className="text-4xl font-baloo font-extrabold text-gradient">
-                    R$ {plan.price}
+                    R$ {displayPrice}
                   </p>
+                  {hasDiscount && (
+                    <p className="text-sm font-semibold text-accent-foreground bg-accent/30 rounded-full px-3 py-1">
+                      🎉 Cupom MAGICA10 aplicado — 10% OFF
+                    </p>
+                  )}
                 </div>
 
                 {/* Parent data form */}
@@ -680,7 +709,7 @@ export default function Payment() {
               <div className="card-float text-center">
                 <div className="inline-flex items-center gap-2 bg-mint/20 text-mint-foreground px-4 py-2 rounded-full text-sm font-medium mb-6">
                   <QrCode className="w-4 h-4" />
-                  Pague via Pix — R$ {plan.price}
+                  Pague via Pix — R$ {displayPrice}
                 </div>
 
                 {/* QR Code */}

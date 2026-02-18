@@ -23,7 +23,7 @@ serve(async (req) => {
   }
 
   try {
-    const { taskId, plan, origin, customerName, customerEmail: reqEmail, customerCpf } = await req.json();
+    const { taskId, plan, origin, customerName, customerEmail: reqEmail, customerCpf, discountPercent } = await req.json();
 
     const ABACATEPAY_API_KEY = Deno.env.get("ABACATEPAY_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -49,8 +49,11 @@ serve(async (req) => {
       );
     }
 
-    // Determine price in cents
-    const priceInCents = plan === "pacote" ? 2490 : 990;
+    // Determine price in cents, applying discount if provided
+    let priceInCents = plan === "pacote" ? 2490 : 990;
+    if (discountPercent && typeof discountPercent === "number" && discountPercent > 0 && discountPercent <= 50) {
+      priceInCents = Math.round(priceInCents * (1 - discountPercent / 100));
+    }
     const productName = plan === "pacote"
       ? `Pacote Encantado - 3 músicas personalizadas`
       : `Música Mágica para ${task.child_name}`;

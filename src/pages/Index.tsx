@@ -6,6 +6,7 @@ import { Testimonials } from "@/components/landing/Testimonials";
 import { Pricing } from "@/components/landing/Pricing";
 import { FAQ } from "@/components/landing/FAQ";
 import { Footer } from "@/components/landing/Footer";
+import { ExitIntentPopup } from "@/components/ui/ExitIntentPopup";
 
 const Index = () => {
   return (
@@ -18,6 +19,7 @@ const Index = () => {
       <Pricing />
       <FAQ />
       <Footer />
+      <ExitIntentPopup />
     </main>
   );
 };
