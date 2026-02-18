@@ -1,28 +1,56 @@
 
+## Popup de Saída com Cupom de 10% de Desconto
 
-## Adicionar mais repetições nas letras geradas
+Quando o usuário mover o mouse para fora da página (em direção à barra de fechar/voltar do navegador), abriremos um popup oferecendo um cupom de desconto para incentivar a compra.
 
-Atualizar o prompt de geração de letras para que a IA crie músicas com mais repetições, tornando-as mais fáceis de decorar para as crianças.
+### O que será criado
 
-### O que muda
+**1. Componente `ExitIntentPopup`** (`src/components/ui/ExitIntentPopup.tsx`)
 
-O prompt na função de geração de letras será ajustado para instruir a IA a:
+- Detecta a intenção de saída via evento `mouseleave` no topo da janela (`clientY < 5`)
+- Exibe apenas 1 vez por sessão (usando `sessionStorage`)
+- Mostra o código do cupom `MAGICA10` com botão "Copiar"
+- Botão "Quero meu desconto!" que redireciona para `/criar` já com o cupom aplicado
+- Animação suave de entrada/saída com Framer Motion
 
-- Repetir o refrão 2 vezes na estrutura da música (Estrofe 1 > Refrão > Estrofe 2 > Refrão)
-- Usar frases-chave repetidas dentro das estrofes
-- Criar um refrão mais curto e repetitivo (estilo "canta comigo")
-- Manter a duração total entre 1:30 e 2:30 minutos
+**2. Integração no `Index.tsx`**
+
+Adiciona o `<ExitIntentPopup />` na landing page.
+
+**3. Aplicação do desconto no `Payment.tsx`**
+
+- Lê o cupom salvo no `localStorage` (`exitCoupon`)
+- Se válido (`MAGICA10`), exibe o preço com desconto:
+  - Avulsa: R$ 9,90 → **R$ 8,91**
+  - Pacote: R$ 24,90 → **R$ 22,41**
+- Passa o preço com desconto para a função de cobrança
+
+**4. Atualização do `musicPipeline.ts`**
+
+Adiciona parâmetro `discountPercent` opcional na função `createBilling`.
+
+**5. Atualização do `create-billing/index.ts`** (Edge Function)
+
+Recebe `discountPercent` e aplica o desconto no `priceInCents` antes de criar o Pix.
 
 ### Detalhes técnicos
 
-**Arquivo:** `supabase/functions/generate-lyrics-only/index.ts`
+```text
+Fluxo completo:
 
-Alterar o `systemPrompt` para enfatizar repetições:
+1. Usuário visita a landing page
+2. Move o mouse para cima (tentando fechar)
+3. Popup aparece com cupom MAGICA10
+4. Usuário clica em "Quero meu desconto!"
+5. localStorage.setItem("exitCoupon", "MAGICA10") + navigate("/criar")
+6. Na tela de pagamento, cupom é lido e preço exibido com -10%
+7. Na chamada create-billing, discountPercent=10 é enviado
+8. Edge function calcula: price - (price * 10/100)
+```
 
-- Estrutura: Estrofe 1 + Refrão + Estrofe 2 + Refrão (refrão aparece 2 vezes)
-- O refrão deve ter frases que se repetem (ex: mesma frase cantada 2x seguidas)
-- Usar repetições naturais dentro das estrofes (ex: "Vamos lá, vamos lá!")
-- Manter linguagem simples e cativante
+### Proteções
 
-Nenhuma outra alteração necessária -- a mudança é apenas no texto do prompt.
-
+- O popup aparece apenas **1 vez por sessão** (sessionStorage)
+- Só dispara se o usuário ainda não tiver clicado em "Criar minha música"
+- Desconto validado no backend (não apenas no frontend)
+- Cupom é limpo do localStorage após o pagamento ser iniciado
