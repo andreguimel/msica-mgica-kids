@@ -143,7 +143,11 @@ export default function Payment() {
   const isPacote = selectedPlan === "pacote";
   const appliedCoupon = getExitCoupon();
   const hasDiscount = appliedCoupon === VALID_COUPON;
-  const displayPrice = hasDiscount ? applyDiscount(plan.price, DISCOUNT_PERCENT) : plan.price;
+  // Use state so displayPrice stays stable even after localStorage.removeItem("exitCoupon")
+  const [displayPrice] = useState(() =>
+    hasDiscount ? applyDiscount(plan.price, DISCOUNT_PERCENT) : plan.price
+  );
+  const [appliedDiscount] = useState(() => hasDiscount);
   const [songsRemaining, setSongsRemaining] = useState(getPackageSongsRemaining());
   const [packageSongs, setPackageSongs] = useState<PackageSong[]>(getPackageSongs());
   const isPackageSong = isPacote && songsRemaining > 0;
@@ -390,10 +394,10 @@ export default function Payment() {
         taskId,
         selectedPlan,
         { name: parentName.trim(), email: parentEmail.trim(), cpf: cpfDigits },
-        hasDiscount ? DISCOUNT_PERCENT : undefined
+        appliedDiscount ? DISCOUNT_PERCENT : undefined
       );
       // Coupon has been used — clear it
-      if (hasDiscount) localStorage.removeItem("exitCoupon");
+      if (appliedDiscount) localStorage.removeItem("exitCoupon");
       setBrCode(result.brCode);
       setPaymentState("qrcode");
 
@@ -591,7 +595,7 @@ export default function Payment() {
                   <p className="text-muted-foreground text-sm mb-4">
                     {plan.description}
                   </p>
-                  {hasDiscount && (
+                  {appliedDiscount && (
                     <p className="text-lg text-muted-foreground line-through">
                       R$ {plan.price}
                     </p>
@@ -599,7 +603,7 @@ export default function Payment() {
                   <p className="text-4xl font-baloo font-extrabold text-gradient">
                     R$ {displayPrice}
                   </p>
-                  {hasDiscount && (
+                  {appliedDiscount && (
                     <p className="text-sm font-semibold text-accent-foreground bg-accent/30 rounded-full px-3 py-1">
                       🎉 Cupom MAGICA10 aplicado — 10% OFF
                     </p>
