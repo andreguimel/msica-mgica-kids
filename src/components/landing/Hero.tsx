@@ -23,6 +23,7 @@ export function Hero() {
   const [songIndex, setSongIndex] = useState(0);
 
   const [initialCount] = useState(() => 1234 + Math.floor(Math.random() * 500));
+  const [todayCount] = useState(() => Math.floor(37 + Math.random() * 10));
 
   const song = DEMO_SONGS[songIndex];
 
@@ -207,7 +208,7 @@ export function Hero() {
               </span>
               <span className="text-muted-foreground/40 hidden sm:inline">•</span>
               <span className="flex items-center gap-1 text-sm">
-                🔥 <span className="font-semibold text-foreground">{Math.floor(37 + Math.random() * 10)}</span> criadas hoje
+                🔥 <span className="font-semibold text-foreground">{todayCount}</span> criadas hoje
               </span>
             </motion.div>
           </motion.div>
