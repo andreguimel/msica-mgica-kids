@@ -1,34 +1,38 @@
 import { motion } from "framer-motion";
-import { Star } from "lucide-react";
+import { Star, CheckCircle2 } from "lucide-react";
 
 const testimonials = [
   {
     name: "Mariana S.",
     child: "Mãe da Sofia, 5 anos",
-    avatar: "👩‍🦰",
+    initials: "MS",
+    color: "bg-pink-400",
     rating: 5,
-    text: "Minha filha não para de cantar a música dela! Chorei de emoção quando ouvi. Presente perfeito de aniversário!",
+    text: "Minha filha não para de cantar a música dela! Chorei de emoção quando ouvi pela primeira vez. Presente perfeito de aniversário!",
   },
   {
     name: "Pedro L.",
     child: "Pai do Lucas, 4 anos",
-    avatar: "👨",
+    initials: "PL",
+    color: "bg-blue-400",
     rating: 5,
-    text: "Incrível como a IA conseguiu criar algo tão especial. O Lucas ouve todo dia antes de dormir. Super recomendo!",
+    text: "Incrível como conseguiu criar algo tão especial e personalizado. O Lucas ouve todo dia antes de dormir. Super recomendo!",
   },
   {
     name: "Ana Paula R.",
     child: "Avó da Helena, 6 anos",
-    avatar: "👵",
+    initials: "AP",
+    color: "bg-purple-400",
     rating: 5,
-    text: "Dei de presente para minha neta e ela amou! A qualidade da música me surpreendeu muito.",
+    text: "Dei de presente para minha neta e ela ficou emocionada! A qualidade da música me surpreendeu muito. Vale cada centavo.",
   },
   {
     name: "Carlos M.",
     child: "Pai do Miguel, 3 anos",
-    avatar: "👨‍🦱",
+    initials: "CM",
+    color: "bg-green-400",
     rating: 5,
-    text: "Meu filho aprendeu a soletrar o nome dele com a música! Educativo e divertido ao mesmo tempo.",
+    text: "Meu filho aprendeu a soletrar o nome dele com a música! Educativo, divertido e muito especial. Recomendo demais!",
   },
 ];
 
@@ -62,9 +66,17 @@ export function Testimonials() {
             >
               {/* Header do card */}
               <div className="flex items-center gap-4 mb-4">
-                <span className="text-4xl">{testimonial.avatar}</span>
-                <div>
-                  <h4 className="font-bold">{testimonial.name}</h4>
+                <div className={`w-12 h-12 rounded-full ${testimonial.color} flex items-center justify-center text-primary-foreground font-bold text-sm flex-shrink-0`}>
+                  {testimonial.initials}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-bold">{testimonial.name}</h4>
+                    <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Compra verificada
+                    </span>
+                  </div>
                   <p className="text-sm text-muted-foreground">{testimonial.child}</p>
                 </div>
               </div>

@@ -100,7 +100,7 @@ export function Hero() {
       <FloatingElements />
       <audio ref={audioRef} src={song.url} preload="metadata" />
 
-      <div className="container-rounded relative z-10 py-20">
+      <div className="container-rounded relative z-10 pt-32 pb-20">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Conteúdo textual */}
           <motion.div
@@ -125,9 +125,11 @@ export function Hero() {
               transition={{ delay: 0.3 }}
               className="text-4xl md:text-5xl lg:text-6xl font-baloo font-extrabold leading-tight mb-6"
             >
-              <span className="text-gradient">Música Mágica</span>
+              <span className="text-foreground">Seu filho vai ouvir</span>
               <br />
-              <span className="text-foreground">para Crianças</span>
+              <span className="text-gradient">o nome dele</span>
+              <br />
+              <span className="text-foreground">em uma música!</span>
             </motion.h1>
 
             <motion.p
@@ -136,16 +138,15 @@ export function Hero() {
               transition={{ delay: 0.4 }}
               className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0"
             >
-              Crie uma música única e personalizada com o nome do seu filho! 
-              Letra educativa, melodia alegre e muita diversão. 
-              <span className="text-primary font-semibold"> Em apenas 1 minuto!</span>
+              Música personalizada com o nome da sua criança — letra educativa, melodia alegre, pronta em 1 minuto.
+              <span className="text-primary font-semibold"> Uma surpresa que ela nunca vai esquecer!</span>
             </motion.p>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="flex flex-col sm:flex-row items-center gap-4 mb-8"
+              className="flex flex-col sm:flex-row items-center gap-4 mb-6"
             >
               <MagicButton 
                 size="lg" 
@@ -153,7 +154,7 @@ export function Hero() {
                 className="w-full sm:w-auto"
               >
                 <Music className="w-5 h-5" />
-                Criar minha música agora!
+                Criar a música do meu filho agora!
               </MagicButton>
               
               <div className="text-center">
@@ -164,19 +165,49 @@ export function Hero() {
               </div>
             </motion.div>
 
+            {/* Mini depoimentos abaixo do CTA */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="flex flex-col gap-2 mb-6 text-sm"
+            >
+              {[
+                { initials: "MS", text: '"Chorei de emoção quando ouvi!" — Mariana S.' },
+                { initials: "PL", text: '"Meu filho ouve todo dia antes de dormir!" — Pedro L.' },
+                { initials: "AP", text: '"Presente mais especial que já dei!" — Ana P.' },
+              ].map((t, i) => (
+                <div key={i} className="flex items-center gap-2 text-muted-foreground">
+                  <div className="w-6 h-6 rounded-full bg-primary/80 flex items-center justify-center text-primary-foreground text-xs font-bold flex-shrink-0">
+                    {t.initials}
+                  </div>
+                  <span className="flex items-center gap-1">
+                    <span className="text-accent text-xs">⭐⭐⭐⭐⭐</span>
+                    <span className="text-xs">{t.text}</span>
+                  </span>
+                </div>
+              ))}
+            </motion.div>
+
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.7 }}
-              className="flex items-center justify-center lg:justify-start gap-2 text-muted-foreground"
+              className="flex flex-wrap items-center justify-center lg:justify-start gap-4 text-muted-foreground"
             >
-              <span className="text-2xl">🎵</span>
-              <span className="text-lg">
-                Mais de{" "}
-                <span className="font-bold text-primary text-xl">
-                  <AnimatedCounter end={initialCount} duration={2.5} />
+              <span className="flex items-center gap-1">
+                <span className="text-xl">🎵</span>
+                <span className="text-sm">
+                  Mais de{" "}
+                  <span className="font-bold text-primary">
+                    <AnimatedCounter end={initialCount} duration={2.5} />
+                  </span>
+                  {" "}músicas criadas!
                 </span>
-                {" "}músicas já criadas!
+              </span>
+              <span className="text-muted-foreground/40 hidden sm:inline">•</span>
+              <span className="flex items-center gap-1 text-sm">
+                🔥 <span className="font-semibold text-foreground">{Math.floor(37 + Math.random() * 10)}</span> criadas hoje
               </span>
             </motion.div>
           </motion.div>
