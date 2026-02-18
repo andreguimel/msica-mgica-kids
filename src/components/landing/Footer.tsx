@@ -51,11 +51,11 @@ export function Footer() {
             <h4 className="font-bold mb-4">Fale Conosco</h4>
             <div className="space-y-3">
               <motion.a
-                href="https://wa.me/5511999999999?text=Olá! Tenho uma dúvida sobre a Música Mágica"
+
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 text-sm text-primary-foreground/70 hover:text-mint transition-colors"
-                whileHover={{ x: 5 }}>
+                whileHover={{ x: 5 }} href="https://wa.me/5581996919895?text=Ol\xE1! Tenho uma d\xFAvida sobre a M\xFAsica M\xE1gica">
 
                 <div className="w-10 h-10 bg-mint/20 rounded-full flex items-center justify-center">
                   <MessageCircle className="w-5 h-5 text-mint" />
