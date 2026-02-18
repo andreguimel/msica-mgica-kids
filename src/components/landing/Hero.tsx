@@ -8,10 +8,10 @@ import { MagicButton } from "@/components/ui/MagicButton";
 import heroImage from "@/assets/hero-animals-music.jpg";
 
 const DEMO_SONGS = [
-  { name: "Pedro", theme: "Animais da Floresta", url: "/audio/demo-song.mp3", emoji: "🐾" },
-  { name: "Amanda", theme: "Princesas Encantadas", url: "/audio/demo-amanda.mp3", emoji: "👑" },
-  { name: "Isabela", theme: "Natureza Mágica", url: "/audio/demo-isabela.mp3", emoji: "🌿" },
-];
+{ name: "Pedro", theme: "Animais da Floresta", url: "/audio/demo-song.mp3", emoji: "🐾" },
+{ name: "Amanda", theme: "Princesas Encantadas", url: "/audio/demo-amanda.mp3", emoji: "👑" },
+{ name: "Isabela", theme: "Natureza Mágica", url: "/audio/demo-isabela.mp3", emoji: "🌿" }];
+
 
 export function Hero() {
   const navigate = useNavigate();
@@ -66,35 +66,35 @@ export function Hero() {
     if (!audio) return;
 
     const onCanPlay = () => {
+
+
+
+
+
+
+
+
       // Don't auto-play on first mount
-    };
-    audio.addEventListener("canplaythrough", onCanPlay);
-    return () => audio.removeEventListener("canplaythrough", onCanPlay);
-  }, [songIndex]);
+    };audio.addEventListener("canplaythrough", onCanPlay);return () => audio.removeEventListener("canplaythrough", onCanPlay);}, [songIndex]);useEffect(() => {const audio = audioRef.current;if (!audio) return;
+      const onTime = () => {
+        setCurrentTime(audio.currentTime);
+        setProgress(audio.duration ? audio.currentTime / audio.duration * 100 : 0);
+      };
+      const onMeta = () => setDuration(audio.duration);
+      const onEnd = () => {
+        // Auto-advance to next song
+        changeSong(1);
+      };
 
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const onTime = () => {
-      setCurrentTime(audio.currentTime);
-      setProgress(audio.duration ? (audio.currentTime / audio.duration) * 100 : 0);
-    };
-    const onMeta = () => setDuration(audio.duration);
-    const onEnd = () => {
-      // Auto-advance to next song
-      changeSong(1);
-    };
-
-    audio.addEventListener("timeupdate", onTime);
-    audio.addEventListener("loadedmetadata", onMeta);
-    audio.addEventListener("ended", onEnd);
-    return () => {
-      audio.removeEventListener("timeupdate", onTime);
-      audio.removeEventListener("loadedmetadata", onMeta);
-      audio.removeEventListener("ended", onEnd);
-    };
-  }, [changeSong]);
+      audio.addEventListener("timeupdate", onTime);
+      audio.addEventListener("loadedmetadata", onMeta);
+      audio.addEventListener("ended", onEnd);
+      return () => {
+        audio.removeEventListener("timeupdate", onTime);
+        audio.removeEventListener("loadedmetadata", onMeta);
+        audio.removeEventListener("ended", onEnd);
+      };
+    }, [changeSong]);
 
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden bg-background stars-bg">
@@ -108,14 +108,14 @@ export function Hero() {
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-center lg:text-left"
-          >
+            className="text-center lg:text-left">
+
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="inline-flex items-center gap-2 badge-fun mb-6"
-            >
+              className="inline-flex items-center gap-2 badge-fun mb-6">
+
               <Sparkles className="w-4 h-4" />
               <span>Feito com IA + Muito Amor</span>
             </motion.div>
@@ -124,21 +124,21 @@ export function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="text-4xl md:text-5xl lg:text-6xl font-baloo font-extrabold leading-tight mb-6"
-            >
-              <span className="text-foreground">Seu filho vai ouvir</span>
+              className="text-4xl md:text-5xl lg:text-6xl font-baloo font-extrabold leading-tight mb-6">
+
+              <span className="text-foreground text-5xl">Seu filho(a) vai ouvir</span>
               <br />
-              <span className="text-gradient">o nome dele</span>
+              <span className="text-gradient">o nome dele(a)</span>
               <br />
-              <span className="text-foreground">em uma música!</span>
+              <span className="text-foreground text-5xl">em uma música!</span>
             </motion.h1>
 
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0"
-            >
+              className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0">
+
               Música personalizada com o nome da sua criança — letra educativa, melodia alegre, pronta em 1 minuto.
               <span className="text-primary font-semibold"> Uma surpresa que ela nunca vai esquecer!</span>
             </motion.p>
@@ -147,13 +147,13 @@ export function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
-              className="flex flex-col sm:flex-row items-center gap-4 mb-6"
-            >
-              <MagicButton 
-                size="lg" 
+              className="flex flex-col sm:flex-row items-center gap-4 mb-6">
+
+              <MagicButton
+                size="lg"
                 onClick={() => navigate("/criar")}
-                className="w-full sm:w-auto"
-              >
+                className="w-full sm:w-auto">
+
                 <Music className="w-5 h-5" />
                 Criar a música do meu filho agora!
               </MagicButton>
@@ -171,14 +171,14 @@ export function Hero() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
-              className="flex flex-col gap-2 mb-6 text-sm"
-            >
+              className="flex flex-col gap-2 mb-6 text-sm">
+
               {[
-                { initials: "MS", text: '"Chorei de emoção quando ouvi!" — Mariana S.' },
-                { initials: "PL", text: '"Meu filho ouve todo dia antes de dormir!" — Pedro L.' },
-                { initials: "AP", text: '"Presente mais especial que já dei!" — Ana P.' },
-              ].map((t, i) => (
-                <div key={i} className="flex items-center gap-2 text-muted-foreground">
+              { initials: "MS", text: '"Chorei de emoção quando ouvi!" — Mariana S.' },
+              { initials: "PL", text: '"Meu filho ouve todo dia antes de dormir!" — Pedro L.' },
+              { initials: "AP", text: '"Presente mais especial que já dei!" — Ana P.' }].
+              map((t, i) =>
+              <div key={i} className="flex items-center gap-2 text-muted-foreground">
                   <div className="w-6 h-6 rounded-full bg-primary/80 flex items-center justify-center text-primary-foreground text-xs font-bold flex-shrink-0">
                     {t.initials}
                   </div>
@@ -187,15 +187,15 @@ export function Hero() {
                     <span className="text-xs">{t.text}</span>
                   </span>
                 </div>
-              ))}
+              )}
             </motion.div>
 
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.7 }}
-              className="flex flex-wrap items-center justify-center lg:justify-start gap-4 text-muted-foreground"
-            >
+              className="flex flex-wrap items-center justify-center lg:justify-start gap-4 text-muted-foreground">
+
               <span className="flex items-center gap-1">
                 <span className="text-xl">🎵</span>
                 <span className="text-sm">
@@ -218,34 +218,34 @@ export function Hero() {
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.3 }}
-            className="relative"
-          >
+            className="relative">
+
             <div className="relative rounded-4xl overflow-hidden shadow-magic animate-float bg-card border border-border p-6">
               {/* Imagem de capa */}
               <div className="relative rounded-3xl overflow-hidden mb-5">
                 <img
                   src={heroImage}
                   alt="Animais tocando música"
-                  className="w-full h-auto"
-                />
-                {isPlaying && (
-                  <>
+                  className="w-full h-auto" />
+
+                {isPlaying &&
+                <>
                     <motion.span
-                      className="absolute top-4 right-4 text-3xl"
-                      animate={{ y: [0, -12, 0], rotate: [0, 15, -15, 0] }}
-                      transition={{ duration: 2.5, repeat: Infinity }}
-                    >
+                    className="absolute top-4 right-4 text-3xl"
+                    animate={{ y: [0, -12, 0], rotate: [0, 15, -15, 0] }}
+                    transition={{ duration: 2.5, repeat: Infinity }}>
+
                       🎵
                     </motion.span>
                     <motion.span
-                      className="absolute bottom-6 left-4 text-2xl"
-                      animate={{ y: [0, -8, 0], rotate: [0, -10, 10, 0] }}
-                      transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}
-                    >
+                    className="absolute bottom-6 left-4 text-2xl"
+                    animate={{ y: [0, -8, 0], rotate: [0, -10, 10, 0] }}
+                    transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}>
+
                       🎶
                     </motion.span>
                   </>
-                )}
+                }
               </div>
 
               {/* Info da música com animação de troca */}
@@ -256,8 +256,8 @@ export function Hero() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.25 }}
-                  >
+                    transition={{ duration: 0.25 }}>
+
                     <h3 className="font-baloo font-bold text-lg text-foreground">
                       ✨ Música da {song.name} ✨
                     </h3>
@@ -273,8 +273,8 @@ export function Hero() {
                 <div className="h-2 bg-muted rounded-full overflow-hidden">
                   <div
                     className="h-full bg-primary rounded-full transition-all duration-300"
-                    style={{ width: `${progress}%` }}
-                  />
+                    style={{ width: `${progress}%` }} />
+
                 </div>
                 <div className="flex justify-between text-xs text-muted-foreground mt-1">
                   <span>{formatTime(currentTime)}</span>
@@ -288,8 +288,8 @@ export function Hero() {
                   onClick={() => changeSong(-1)}
                   className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer"
                   whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                >
+                  whileTap={{ scale: 0.95 }}>
+
                   <SkipBack className="w-4 h-4" />
                 </motion.button>
 
@@ -299,8 +299,8 @@ export function Hero() {
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                   animate={isPlaying ? { scale: [1, 1.08, 1] } : {}}
-                  transition={isPlaying ? { duration: 1.5, repeat: Infinity } : {}}
-                >
+                  transition={isPlaying ? { duration: 1.5, repeat: Infinity } : {}}>
+
                   {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
                 </motion.button>
 
@@ -308,52 +308,52 @@ export function Hero() {
                   onClick={() => changeSong(1)}
                   className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer"
                   whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                >
+                  whileTap={{ scale: 0.95 }}>
+
                   <SkipForward className="w-4 h-4" />
                 </motion.button>
               </div>
 
               {/* Indicador de música atual */}
               <div className="flex items-center justify-center gap-2 mt-3">
-                {DEMO_SONGS.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => {
-                      if (i !== songIndex) {
-                        if (audioRef.current) audioRef.current.pause();
-                        setIsPlaying(false);
-                        setProgress(0);
-                        setCurrentTime(0);
-                        setDuration(0);
-                        setSongIndex(i);
-                      }
-                    }}
-                    className={`w-2 h-2 rounded-full transition-all ${
-                      i === songIndex ? "bg-primary scale-125" : "bg-muted-foreground/30"
-                    }`}
-                  />
-                ))}
+                {DEMO_SONGS.map((_, i) =>
+                <button
+                  key={i}
+                  onClick={() => {
+                    if (i !== songIndex) {
+                      if (audioRef.current) audioRef.current.pause();
+                      setIsPlaying(false);
+                      setProgress(0);
+                      setCurrentTime(0);
+                      setDuration(0);
+                      setSongIndex(i);
+                    }
+                  }}
+                  className={`w-2 h-2 rounded-full transition-all ${
+                  i === songIndex ? "bg-primary scale-125" : "bg-muted-foreground/30"}`
+                  } />
+
+                )}
               </div>
 
               {/* Ondas sonoras animadas */}
               <div className="flex items-end justify-center gap-1 mt-3 h-6">
-                {[0.6, 1, 0.4, 0.8, 0.5, 1, 0.7, 0.3, 0.9, 0.5, 0.8, 0.6].map((h, i) => (
-                  <motion.div
-                    key={i}
-                    className="w-1.5 bg-primary/60 rounded-full"
-                    animate={
-                      isPlaying
-                        ? { height: [`${h * 24}px`, `${h * 8}px`, `${h * 24}px`] }
-                        : { height: "4px" }
-                    }
-                    transition={{
-                      duration: 0.8 + Math.random() * 0.4,
-                      repeat: isPlaying ? Infinity : 0,
-                      delay: i * 0.08,
-                    }}
-                  />
-                ))}
+                {[0.6, 1, 0.4, 0.8, 0.5, 1, 0.7, 0.3, 0.9, 0.5, 0.8, 0.6].map((h, i) =>
+                <motion.div
+                  key={i}
+                  className="w-1.5 bg-primary/60 rounded-full"
+                  animate={
+                  isPlaying ?
+                  { height: [`${h * 24}px`, `${h * 8}px`, `${h * 24}px`] } :
+                  { height: "4px" }
+                  }
+                  transition={{
+                    duration: 0.8 + Math.random() * 0.4,
+                    repeat: isPlaying ? Infinity : 0,
+                    delay: i * 0.08
+                  }} />
+
+                )}
               </div>
             </div>
 
@@ -361,20 +361,20 @@ export function Hero() {
             <motion.div
               className="absolute -top-6 -right-6 text-5xl"
               animate={{ rotate: [0, 15, -15, 0] }}
-              transition={{ duration: 4, repeat: Infinity }}
-            >
+              transition={{ duration: 4, repeat: Infinity }}>
+
               🎈
             </motion.div>
             <motion.div
               className="absolute -bottom-4 -left-4 text-4xl"
               animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
+              transition={{ duration: 2, repeat: Infinity }}>
+
               🌈
             </motion.div>
           </motion.div>
         </div>
       </div>
-    </section>
-  );
+    </section>);
+
 }
