@@ -71,7 +71,8 @@ export async function saveCustomLyrics(params: GenerateLyricsParams & { customLy
 export async function createBilling(
   taskId: string,
   plan: string,
-  customerData?: { name: string; email: string; cpf: string }
+  customerData?: { name: string; email: string; cpf: string },
+  discountPercent?: number
 ): Promise<{ billingId: string; brCode: string; brCodeBase64: string }> {
   const response = await fetch(`${SUPABASE_URL}/functions/v1/create-billing`, {
     method: "POST",
@@ -83,6 +84,7 @@ export async function createBilling(
       customerName: customerData?.name,
       customerEmail: customerData?.email,
       customerCpf: customerData?.cpf,
+      discountPercent,
     }),
   });
 
