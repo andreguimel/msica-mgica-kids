@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import QRCode from "react-qr-code";
 import {
   ArrowLeft,
@@ -58,6 +58,9 @@ function getExitCoupon(): string | null {
   return localStorage.getItem("exitCoupon");
 }
 
+const RECOVERY_COUPON = "RESGATE50";
+const RECOVERY_DISCOUNT_PERCENT = 50;
+
 function applyDiscount(priceStr: string, discountPct: number): string {
   const price = parseFloat(priceStr.replace(",", "."));
   const discounted = price * (1 - discountPct / 100);
@@ -114,6 +117,7 @@ function isValidEmail(email: string): boolean {
 
 export default function Payment() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const [musicData, setMusicData] = useState<MusicData | null>(null);
   const [taskId, setTaskId] = useState<string | null>(null);
@@ -141,13 +145,19 @@ export default function Payment() {
   const selectedPlan = localStorage.getItem("selectedPlan") || "single";
   const plan = planInfo[selectedPlan as keyof typeof planInfo];
   const isPacote = selectedPlan === "pacote";
-  const appliedCoupon = getExitCoupon();
+  // Check coupon from localStorage or from URL param (e.g. ?coupon=RESGATE50)
+  const urlCoupon = searchParams.get("coupon")?.toUpperCase() || null;
+  const appliedCoupon = urlCoupon || getExitCoupon();
   const hasDiscount = appliedCoupon === VALID_COUPON;
+  const hasRecoveryDiscount = appliedCoupon === RECOVERY_COUPON;
   // Use state so displayPrice stays stable even after localStorage.removeItem("exitCoupon")
-  const [displayPrice] = useState(() =>
-    hasDiscount ? applyDiscount(plan.price, DISCOUNT_PERCENT) : plan.price
-  );
-  const [appliedDiscount] = useState(() => hasDiscount);
+  const [displayPrice] = useState(() => {
+    if (hasRecoveryDiscount) return applyDiscount(plan.price, RECOVERY_DISCOUNT_PERCENT);
+    if (hasDiscount) return applyDiscount(plan.price, DISCOUNT_PERCENT);
+    return plan.price;
+  });
+  const [appliedDiscount] = useState(() => hasDiscount || hasRecoveryDiscount);
+  const [discountPercent] = useState(() => hasRecoveryDiscount ? RECOVERY_DISCOUNT_PERCENT : hasDiscount ? DISCOUNT_PERCENT : 0);
   const [songsRemaining, setSongsRemaining] = useState(getPackageSongsRemaining());
   const [packageSongs, setPackageSongs] = useState<PackageSong[]>(getPackageSongs());
   const isPackageSong = isPacote && songsRemaining > 0;
@@ -394,7 +404,7 @@ export default function Payment() {
         taskId,
         selectedPlan,
         { name: parentName.trim(), email: parentEmail.trim(), cpf: cpfDigits },
-        appliedDiscount ? DISCOUNT_PERCENT : undefined
+        discountPercent > 0 ? discountPercent : undefined
       );
       // Coupon has been used — clear it
       if (appliedDiscount) localStorage.removeItem("exitCoupon");
