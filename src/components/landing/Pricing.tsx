@@ -51,8 +51,11 @@ export function Pricing() {
           <h2 className="text-3xl md:text-4xl font-baloo font-bold mb-4">
             Escolha seu <span className="text-gradient">plano mágico</span>
           </h2>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-lg text-muted-foreground mb-2">
             Pagamento único via Pix • Download instantâneo
+          </p>
+          <p className="text-sm font-medium text-primary animate-pulse">
+            ⚡ Preço especial por tempo limitado — Use o cupom MAGICA10 para 10% OFF
           </p>
         </motion.div>
 
