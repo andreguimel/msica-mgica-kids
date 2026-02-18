@@ -1,73 +1,90 @@
 
-## Diagnóstico da Campanha
+## Notificações por E-mail para o Administrador
 
-Com 283 cliques e 1 conversão, a taxa atual é **0,35%** (meta: 2–5%). O custo por clique (R$ 0,18) é ótimo — o gargalo é a página.
+### Visão Geral
 
-Principais problemas identificados no código:
-
-1. **Hero sem urgência real** — o título "Música Mágica para Crianças" é genérico e não conecta emocionalmente com a dor do pai/mãe
-2. **Sem prova social forte no topo** — os depoimentos ficam no final da página, mas o visitante decide em segundos
-3. **Player de demo não autoplay** — o visitante precisa clicar para ouvir. Muitos não fazem isso
-4. **Sem timer de urgência** — a oferta não tem prazo, não gera senso de urgência
-5. **Falta de âncora emocional** — não há foto/vídeo de criança real reagindo à música
-6. **Depoimentos sem foto real** — emojis como avatar reduzem credibilidade
-7. **Sem banner de urgência fixo** — ao rolar a página, o visitante perde o botão de compra
-8. **CTA do Hero fraco** — "Criar minha música agora!" é genérico, não gera FOMO
+Você receberá e-mails automáticos em cada etapa importante do funil de vendas, com dados completos do cliente e da criança. Para o abandono de carrinho, o sistema enviará um e-mail de recuperação com cupom de 50% de desconto diretamente para o cliente.
 
 ---
 
-## Melhorias Propostas (em ordem de impacto)
+### Os 3 Eventos que disparam e-mails
 
-### 1. Reformular o headline do Hero
-**Antes:** "Música Mágica para Crianças"
-**Depois:** "Seu filho vai ouvir o nome dele em uma música!" — conecta diretamente com a emoção do pai/mãe
+**1. Cliente Iniciou** — quando o cliente chega na tela de pagamento (QR Code gerado)
+- Disparo: na função `create-billing`, logo após criar o Pix com sucesso
+- E-mail para você (admin): nome da criança, tema, plano, nome/e-mail do cliente, valor cobrado
 
-### 2. Adicionar barra de urgência no topo da página (Sticky Top Banner)
-Uma faixa fina acima da Navbar com contador regressivo de 15 minutos e o cupom `MAGICA10`:
-```
-⏰ Oferta especial: 10% OFF com MAGICA10 — Expira em 14:32
-```
-- Timer reiniciado a cada sessão com `sessionStorage`
-- Visível em todas as seções enquanto rola a página
+**2. Cliente Comprou** — quando o pagamento Pix é confirmado
+- Disparo: na função `abacatepay-webhook`, quando `status === "PAID"`
+- E-mail para você (admin): confirmação de venda, dados do pedido, valor recebido
 
-### 3. Adicionar depoimentos com mais credibilidade direto no Hero
-Logo abaixo do CTA, adicionar 3 avatares + nome + frase curta:
-```
-⭐⭐⭐⭐⭐  "Minha filha chorou de emoção!" — Ana P.
-```
-
-### 4. Adicionar prova social com número de músicas criadas hoje
-No Hero: "🔥 37 músicas criadas hoje" (número dinâmico simulado + hoje)
-
-### 5. Reformular o CTA
-**Antes:** "Criar minha música agora!"
-**Depois:** "🎵 Ouvir demo e criar a música do meu filho"
-
-### 6. Adicionar seção de "Garantia" destacada entre Pricing e FAQ
-Um card largo com: ✅ Reembolso em 7 dias + Satisfação garantida + Suporte via WhatsApp
+**3. Cliente Abandonou** — Pix expirado sem pagamento
+- Disparo: na função `abacatepay-webhook`, quando `status === "EXPIRED"` ou `"CANCELLED"`
+- E-mail para você (admin): alerta de abandono com dados do cliente
+- E-mail para o cliente: oferta de recuperação com **50% de desconto** e link direto para `/criar`
 
 ---
 
-## Detalhes Técnicos
+### Arquivos a modificar
 
-### Arquivos a modificar:
+**`supabase/functions/create-billing/index.ts`**
+Após criar o Pix com sucesso, chama o Brevo para enviar e-mail ao admin com:
+- Nome e tema da criança
+- Nome, e-mail e CPF do cliente
+- Plano escolhido (avulso ou pacote)
+- Valor cobrado
 
-**`src/components/landing/Hero.tsx`**
-- Mudar `<h1>` para headline emocional orientada ao benefício
-- Adicionar mini-depoimentos abaixo do botão CTA (3 avatares circulares + texto)
-- Mudar texto do botão CTA
-- Adicionar indicador "🔥 X músicas criadas hoje"
+**`supabase/functions/abacatepay-webhook/index.ts`**
+Adiciona dois novos blocos de notificação:
+- `isPaid` → envia e-mail de "Venda confirmada!" ao admin
+- `isExpired` (status `EXPIRED` ou `CANCELLED`) → envia dois e-mails:
+  - Admin: alerta de abandono
+  - Cliente: e-mail de recuperação com cupom de 50% (`RESGATE50`)
 
-**`src/components/landing/Navbar.tsx`**
-- Adicionar `StickyTopBanner` acima da Navbar com countdown de 15 minutos
-- O banner usa `sessionStorage` para manter o tempo entre navegações
+---
 
-**`src/components/landing/Testimonials.tsx`**
-- Substituir avatares emoji por iniciais em círculos coloridos (mais credível)
-- Adicionar "Compra verificada ✓" em cada depoimento
+### E-mail de recuperação para o cliente (abandono)
 
-**`src/components/landing/Pricing.tsx`**
-- Adicionar urgência: "⚡ Preço especial por tempo limitado"
+```
+Assunto: "Oi! Esqueceu a música de [Nome]? 🎵"
 
-**`src/pages/Index.tsx`**
-- Reordenar seções: Testimonials sobe para antes do Pricing (prova social antes de pedir o dinheiro)
+Corpo:
+  Olá! Você quase criou a música personalizada de [Nome da Criança].
+
+  Por isso, estamos oferecendo 50% de desconto exclusivo por 24h.
+
+  Use o cupom: RESGATE50
+
+  [Botão: Resgatar meu desconto →] → abre /criar com cupom salvo
+```
+
+---
+
+### Detalhes Técnicos
+
+**Como o cupom de 50% funciona:**
+- O link de recuperação enviado no e-mail será: `https://musicamagica.com.br/criar?coupon=RESGATE50`
+- O `Payment.tsx` já lê cupons do `localStorage`; será atualizado para também ler o parâmetro `?coupon=` da URL
+- O cupom `RESGATE50` = 50% de desconto será validado no backend `create-billing` (já aceita `discountPercent` até 50%)
+
+**Remetente:** `andreguimel@gmail.com` (já configurado no Brevo)
+
+**Destinatário admin:** `andreguimel@gmail.com` (hardcoded, mas pode ser tornado configurável)
+
+**Segurança:** O cupom é validado no backend — o usuário não pode manipular o valor do desconto pelo frontend.
+
+**Fluxo completo:**
+
+```text
+[Cliente preenche dados e gera QR]
+         ↓
+  create-billing → e-mail: "Cliente Iniciou" para admin
+         ↓
+[Cliente paga o Pix]
+         ↓
+  abacatepay-webhook (PAID) → e-mail: "Venda Confirmada!" para admin
+         ↓
+[Pix expira sem pagamento]
+         ↓
+  abacatepay-webhook (EXPIRED) → e-mail para admin: "Abandono de Carrinho"
+                               → e-mail para cliente: "Oferta 50% OFF"
+```
