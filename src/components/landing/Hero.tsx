@@ -108,6 +108,8 @@ export function Hero() {
 
 
 
+
+
       // Don't auto-play on first mount
     };audio.addEventListener("canplaythrough", onCanPlay);return () => audio.removeEventListener("canplaythrough", onCanPlay);}, [songIndex]);useEffect(() => {const audio = audioRef.current;if (!audio) return;const onTime = () => {setCurrentTime(audio.currentTime);setProgress(audio.duration ? audio.currentTime / audio.duration * 100 : 0);};const onMeta = () => setDuration(audio.duration);const onEnd = () => {// Auto-advance to next song
         changeSong(1);};audio.addEventListener("timeupdate", onTime);audio.addEventListener("loadedmetadata", onMeta);audio.addEventListener("ended", onEnd);return () => {audio.removeEventListener("timeupdate", onTime);audio.removeEventListener("loadedmetadata", onMeta);audio.removeEventListener("ended", onEnd);};}, [changeSong]);return <section className="relative min-h-screen flex items-center overflow-hidden bg-background stars-bg">
@@ -130,24 +132,22 @@ export function Hero() {
               <span className="text-foreground text-5xl">Supreenda a criança
 com 
             </span>
-              <br />
+              <br className="text-7xl" />
               <span className="text-gradient">Música Mágica</span>
               <br />
-              <span className="text-foreground text-5xl">com o nome dele!</span>
+              
             </motion.h1>
 
-            <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-            className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0">
+            <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0">
 
               Música personalizada com o nome da sua criança — letra educativa, melodia alegre, pronta em 1 minuto.
               <span className="text-primary font-semibold"> Uma surpresa que ela nunca vai esquecer!</span>
             </motion.p>
 
-            <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="flex flex-col sm:flex-row items-center gap-4 mb-6">
+            <motion.div initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="flex flex-col sm:flex-row items-center gap-4 mb-6">
 
               <MagicButton
               size="lg"
