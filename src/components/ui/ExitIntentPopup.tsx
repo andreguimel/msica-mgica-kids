@@ -70,8 +70,9 @@ export function ExitIntentPopup() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.85, y: -30 }}
             transition={{ type: "spring", damping: 20, stiffness: 300 }}
-            className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 px-4"
+            className="fixed inset-0 z-50 flex items-center justify-center px-4 pointer-events-none"
           >
+            <div className="w-full max-w-md pointer-events-auto">
             <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-background shadow-2xl">
               {/* Decorative gradient top bar */}
               <div className="h-2 w-full bg-gradient-to-r from-primary via-secondary to-accent" />
@@ -159,6 +160,7 @@ export function ExitIntentPopup() {
                   Não, obrigado
                 </button>
               </div>
+            </div>
             </div>
           </motion.div>
         </>
