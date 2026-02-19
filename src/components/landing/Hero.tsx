@@ -155,7 +155,7 @@ export function Hero() {
                 className="w-full sm:w-auto">
 
                 <Music className="w-5 h-5" />
-                Criar a música do meu filho agora!
+                Criar a música mágica agora!
               </MagicButton>
               
               <div className="text-center">
