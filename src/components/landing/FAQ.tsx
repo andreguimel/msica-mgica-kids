@@ -8,6 +8,14 @@ import {
 
 const faqs = [
   {
+    question: "E se eu não gostar da música?",
+    answer: "Sem preocupação! Você tem 7 dias de garantia com reembolso total via Pix. Se por qualquer motivo não ficar satisfeito, devolvemos 100% do valor. Sem burocracia!",
+  },
+  {
+    question: "É seguro pagar por Pix?",
+    answer: "Sim, totalmente seguro! O Pix é regulamentado pelo Banco Central e a transação é instantânea. Não armazenamos dados bancários — o pagamento é feito diretamente pelo seu banco.",
+  },
+  {
     question: "Quanto tempo leva para criar a música?",
     answer: "A magia acontece em menos de 2 minutos! Nossa IA avançada gera a letra e a música personalizada rapidamente. Você pode pré-visualizar a letra antes de comprar.",
   },
@@ -22,14 +30,6 @@ const faqs = [
   {
     question: "O que eu recebo após o pagamento?",
     answer: "Você recebe o MP3 da música completa e a letra em arquivo de texto, prontos para download. Tudo disponível instantaneamente após a confirmação do pagamento.",
-  },
-  {
-    question: "Por quanto tempo posso acessar minha música?",
-    answer: "O link de download fica ativo por 30 dias, e você pode baixar quantas vezes precisar nesse período. Recomendamos salvar em local seguro!",
-  },
-  {
-    question: "Como funciona o pagamento?",
-    answer: "Aceitamos Pix para pagamento instantâneo. Assim que confirmado, você recebe um código de acesso exclusivo para baixar sua música a qualquer momento dentro de 30 dias.",
   },
   {
     question: "É seguro para crianças ouvirem?",

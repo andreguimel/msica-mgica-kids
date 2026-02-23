@@ -166,6 +166,15 @@ com 
               </div>
             </motion.div>
 
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.55 }}
+              className="text-xs text-muted-foreground text-center lg:text-left mb-4"
+            >
+              🛡️ Garantia de 7 dias • Reembolso total via Pix
+            </motion.p>
+
             {/* Mini depoimentos abaixo do CTA */}
             <motion.div
             initial={{ opacity: 0, y: 10 }}

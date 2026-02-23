@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -79,6 +79,13 @@ export default function CreateMusic() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+
+  // Fire ViewContent pixel event
+  useEffect(() => {
+    if (typeof window.fbq === "function") {
+      window.fbq("track", "ViewContent", { content_name: "CreateMusic" });
+    }
+  }, []);
   const [hasCustomLyrics, setHasCustomLyrics] = useState(false);
   const [selectedPlanChoice, setSelectedPlanChoice] = useState<"single" | "pacote">(
     (localStorage.getItem("selectedPlan") as "single" | "pacote") || "single"
