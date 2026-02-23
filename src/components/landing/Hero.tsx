@@ -129,11 +129,10 @@ export function Hero() {
 
             <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-4xl md:text-5xl lg:text-6xl font-baloo font-extrabold leading-tight mb-6">
 
-              <span className="text-foreground text-5xl">Supreenda a criança
-com 
-            </span>
-              <br className="text-7xl" />
-              <span className="text-gradient">Música Mágica</span>
+              <span className="text-foreground text-5xl">Seu filho vai ouvir o
+              </span>
+              <br />
+              <span className="text-gradient">próprio nome cantado!</span>
               <br />
               
             </motion.h1>
