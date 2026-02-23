@@ -9,7 +9,7 @@ import { FAQ } from "@/components/landing/FAQ";
 import { Footer } from "@/components/landing/Footer";
 import { ExitIntentPopup } from "@/components/ui/ExitIntentPopup";
 import { UrgencyBanner } from "@/components/ui/UrgencyBanner";
-import { PurchaseNotification } from "@/components/ui/PurchaseNotification";
+
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 import { StickyMobileCTA } from "@/components/ui/StickyMobileCTA";
 import { motion } from "framer-motion";
@@ -64,7 +64,7 @@ const Index = () => {
       <FAQ />
       <Footer />
       <ExitIntentPopup />
-      <PurchaseNotification />
+      
       <WhatsAppButton />
       <StickyMobileCTA />
     </main>
