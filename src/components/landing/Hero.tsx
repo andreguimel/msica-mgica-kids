@@ -132,7 +132,7 @@ export function Hero() {
               <span className="text-foreground text-5xl">Uma música com o nome
               </span>
               <br />
-              <span className="text-gradient">dela cantado! 🎶</span>
+              <span className="text-gradient">da criança cantado! 🎶</span>
               <br />
               
             </motion.h1>
