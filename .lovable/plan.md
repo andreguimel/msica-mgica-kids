@@ -1,90 +1,85 @@
 
-## Notificações por E-mail para o Administrador
 
-### Visão Geral
+# Plano de Melhorias para Conversao da Landing Page
 
-Você receberá e-mails automáticos em cada etapa importante do funil de vendas, com dados completos do cliente e da criança. Para o abandono de carrinho, o sistema enviará um e-mail de recuperação com cupom de 50% de desconto diretamente para o cliente.
+## Diagnostico
 
----
+Analisei toda a LP e identifiquei os seguintes problemas principais:
 
-### Os 3 Eventos que disparam e-mails
-
-**1. Cliente Iniciou** — quando o cliente chega na tela de pagamento (QR Code gerado)
-- Disparo: na função `create-billing`, logo após criar o Pix com sucesso
-- E-mail para você (admin): nome da criança, tema, plano, nome/e-mail do cliente, valor cobrado
-
-**2. Cliente Comprou** — quando o pagamento Pix é confirmado
-- Disparo: na função `abacatepay-webhook`, quando `status === "PAID"`
-- E-mail para você (admin): confirmação de venda, dados do pedido, valor recebido
-
-**3. Cliente Abandonou** — Pix expirado sem pagamento
-- Disparo: na função `abacatepay-webhook`, quando `status === "EXPIRED"` ou `"CANCELLED"`
-- E-mail para você (admin): alerta de abandono com dados do cliente
-- E-mail para o cliente: oferta de recuperação com **50% de desconto** e link direto para `/criar`
+1. **PurchaseNotification nao esta ativada** - O componente existe mas NAO esta importado no Index.tsx
+2. **Sem botao flutuante de WhatsApp** - Quem tem duvida vai embora
+3. **Sem CTA fixo no mobile** - O botao de compra desaparece ao rolar
+4. **CTAs da Pricing sao fracos** - "Quero essa!" nao comunica valor nem preco
+5. **Sem CTA entre Depoimentos e Pricing** - O usuario le depoimentos e nao tem acao imediata
+6. **FAQ nao ataca objecoes de compra** - A primeira pergunta deveria ser "E se eu nao gostar?"
+7. **Garantia longe dos botoes de compra** - Nao tem micro-garantia perto dos CTAs
+8. **Sem eventos avancados do Pixel** - Sem InitiateCheckout/Purchase, impossivel otimizar anuncios
 
 ---
 
-### Arquivos a modificar
+## Mudancas
 
-**`supabase/functions/create-billing/index.ts`**
-Após criar o Pix com sucesso, chama o Brevo para enviar e-mail ao admin com:
-- Nome e tema da criança
-- Nome, e-mail e CPF do cliente
-- Plano escolhido (avulso ou pacote)
-- Valor cobrado
+### 1. Ativar PurchaseNotification (prova social em tempo real)
+**Arquivo:** `src/pages/Index.tsx`
+- Importar e renderizar `<PurchaseNotification />` - ja existe, so precisa ser adicionado
 
-**`supabase/functions/abacatepay-webhook/index.ts`**
-Adiciona dois novos blocos de notificação:
-- `isPaid` → envia e-mail de "Venda confirmada!" ao admin
-- `isExpired` (status `EXPIRED` ou `CANCELLED`) → envia dois e-mails:
-  - Admin: alerta de abandono
-  - Cliente: e-mail de recuperação com cupom de 50% (`RESGATE50`)
+### 2. Botao flutuante de WhatsApp
+**Novo arquivo:** `src/components/ui/WhatsAppButton.tsx`
+- Icone de WhatsApp fixo no canto inferior direito (acima das notificacoes)
+- Animacao de pulso para chamar atencao
+- Mensagem pre-preenchida: "Ola! Tenho duvidas sobre a musica personalizada"
+- Renderizar em `src/pages/Index.tsx`
+
+### 3. CTA fixo no mobile (sticky bottom)
+**Novo arquivo:** `src/components/ui/StickyMobileCTA.tsx`
+- Barra fixa no rodape apenas em telas mobile
+- Mostra "Criar agora - R$ 9,90" com botao
+- Aparece apos rolar 400px, esconde quando secao de preco esta visivel
+- Renderizar em `src/pages/Index.tsx`
+
+### 4. CTAs mais fortes na Pricing
+**Arquivo:** `src/components/landing/Pricing.tsx`
+- Trocar "Quero essa!" por "Criar musica agora - R$ 9,90"
+- Trocar "Escolher pacote" por "Quero 3 musicas - R$ 24,90"
+- Adicionar texto de micro-garantia abaixo de cada botao: "7 dias de garantia | Reembolso total"
+
+### 5. Secao CTA intermediaria entre Depoimentos e Pricing
+**Arquivo:** `src/pages/Index.tsx`
+- Adicionar uma secao simples entre `<Testimonials />` e `<Pricing />` com:
+  - Frase emocional: "Sua crianca merece esse momento magico"
+  - Botao CTA direto para /criar
+  - Micro-garantia
+
+### 6. Reordenar FAQ para atacar objecoes
+**Arquivo:** `src/components/landing/FAQ.tsx`
+- Nova primeira pergunta: "E se eu nao gostar da musica?" (resposta: garantia 7 dias, reembolso total)
+- Nova segunda pergunta: "E seguro pagar por Pix?" (resposta: sim, pagamento seguro, dados protegidos)
+- Mover as demais para baixo
+
+### 7. Micro-garantia perto dos CTAs do Hero
+**Arquivo:** `src/components/landing/Hero.tsx`
+- Adicionar texto pequeno abaixo do botao principal: "Garantia de 7 dias | Reembolso total via Pix"
+
+### 8. Eventos avancados do Facebook Pixel
+**Arquivo:** `src/vite-env.d.ts` - Declarar tipo global `fbq`
+**Arquivo:** `src/pages/Payment.tsx` - Disparar `InitiateCheckout` ao carregar e `Purchase` ao confirmar pagamento
+**Arquivo:** `src/pages/CreateMusic.tsx` - Disparar `ViewContent` ao carregar
+**Arquivo:** `src/pages/Preview.tsx` - Disparar `Lead` ao visualizar a letra
 
 ---
 
-### E-mail de recuperação para o cliente (abandono)
+## Resumo de arquivos
 
-```
-Assunto: "Oi! Esqueceu a música de [Nome]? 🎵"
+| Arquivo | Acao |
+|---|---|
+| `src/components/ui/WhatsAppButton.tsx` | Criar |
+| `src/components/ui/StickyMobileCTA.tsx` | Criar |
+| `src/pages/Index.tsx` | Modificar (ativar notificacoes, WhatsApp, sticky CTA, CTA intermediario) |
+| `src/components/landing/Pricing.tsx` | Modificar (CTAs + micro-garantia) |
+| `src/components/landing/FAQ.tsx` | Modificar (reordenar perguntas) |
+| `src/components/landing/Hero.tsx` | Modificar (micro-garantia) |
+| `src/vite-env.d.ts` | Modificar (tipo fbq) |
+| `src/pages/Payment.tsx` | Modificar (eventos Pixel) |
+| `src/pages/CreateMusic.tsx` | Modificar (evento ViewContent) |
+| `src/pages/Preview.tsx` | Modificar (evento Lead) |
 
-Corpo:
-  Olá! Você quase criou a música personalizada de [Nome da Criança].
-
-  Por isso, estamos oferecendo 50% de desconto exclusivo por 24h.
-
-  Use o cupom: RESGATE50
-
-  [Botão: Resgatar meu desconto →] → abre /criar com cupom salvo
-```
-
----
-
-### Detalhes Técnicos
-
-**Como o cupom de 50% funciona:**
-- O link de recuperação enviado no e-mail será: `https://musicamagica.com.br/criar?coupon=RESGATE50`
-- O `Payment.tsx` já lê cupons do `localStorage`; será atualizado para também ler o parâmetro `?coupon=` da URL
-- O cupom `RESGATE50` = 50% de desconto será validado no backend `create-billing` (já aceita `discountPercent` até 50%)
-
-**Remetente:** `andreguimel@gmail.com` (já configurado no Brevo)
-
-**Destinatário admin:** `andreguimel@gmail.com` (hardcoded, mas pode ser tornado configurável)
-
-**Segurança:** O cupom é validado no backend — o usuário não pode manipular o valor do desconto pelo frontend.
-
-**Fluxo completo:**
-
-```text
-[Cliente preenche dados e gera QR]
-         ↓
-  create-billing → e-mail: "Cliente Iniciou" para admin
-         ↓
-[Cliente paga o Pix]
-         ↓
-  abacatepay-webhook (PAID) → e-mail: "Venda Confirmada!" para admin
-         ↓
-[Pix expira sem pagamento]
-         ↓
-  abacatepay-webhook (EXPIRED) → e-mail para admin: "Abandono de Carrinho"
-                               → e-mail para cliente: "Oferta 50% OFF"
-```
