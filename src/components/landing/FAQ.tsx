@@ -9,7 +9,7 @@ import {
 const faqs = [
   {
     question: "E se eu não gostar da música?",
-    answer: "Sem preocupação! Você tem 7 dias de garantia com reembolso total via Pix. Se por qualquer motivo não ficar satisfeito, devolvemos 100% do valor. Sem burocracia!",
+    answer: "Nosso sistema usa inteligência artificial avançada para criar músicas incríveis! Você pode pré-visualizar a letra antes de finalizar a compra, garantindo que ficará do jeitinho que você quer.",
   },
   {
     question: "É seguro pagar por Pix?",

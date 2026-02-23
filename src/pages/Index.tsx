@@ -41,7 +41,7 @@ function IntermediateCTA() {
             Criar música personalizada — R$ 9,90
           </MagicButton>
           <p className="text-xs text-muted-foreground mt-3">
-            🛡️ Garantia de 7 dias • Reembolso total via Pix
+            ✅ Pagamento seguro via Pix • Download instantâneo
           </p>
         </motion.div>
       </div>

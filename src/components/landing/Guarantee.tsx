@@ -17,17 +17,10 @@ export function Guarantee() {
               Sua compra é <span className="text-gradient">100% segura</span>
             </h2>
             <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-              Compramos música para a criança e queremos que a experiência seja perfeita. Se algo não funcionar, devolvemos seu dinheiro — sem burocracia.
+              Criamos músicas para crianças e queremos que a experiência seja perfeita. Conte com nosso suporte para qualquer dúvida!
             </p>
 
-            <div className="grid sm:grid-cols-3 gap-6">
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Shield className="w-6 h-6 text-primary" />
-                </div>
-                <p className="font-semibold text-sm">Reembolso em 7 dias</p>
-                <p className="text-xs text-muted-foreground">Se não gostar, devolvemos via Pix</p>
-              </div>
+            <div className="grid sm:grid-cols-2 gap-6">
               <div className="flex flex-col items-center gap-2">
                 <div className="w-12 h-12 rounded-full bg-secondary/20 flex items-center justify-center">
                   <MessageCircle className="w-6 h-6 text-secondary-foreground" />
