@@ -137,15 +137,18 @@ export function Pricing() {
                 {plan.popular ? (
                   <>
                     <Sparkles className="w-5 h-5" />
-                    Quero essa!
+                    Criar música agora — R$ 9,90
                   </>
                 ) : (
                   <>
                     <Gift className="w-5 h-5" />
-                    Escolher pacote
+                    Quero 3 músicas — R$ 24,90
                   </>
                 )}
               </MagicButton>
+              <p className="text-xs text-muted-foreground text-center mt-3">
+                🛡️ 7 dias de garantia • Reembolso total via Pix
+              </p>
             </motion.div>
           ))}
         </div>

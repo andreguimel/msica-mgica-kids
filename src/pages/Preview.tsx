@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
@@ -41,6 +41,10 @@ export default function Preview() {
       const parsed = JSON.parse(stored) as MusicResult;
       setResult(parsed);
       setEditedLyrics(parsed.lyrics);
+      // Fire Lead pixel event
+      if (typeof window.fbq === "function") {
+        window.fbq("track", "Lead", { content_name: parsed.formData.childName });
+      }
     } else {
       navigate("/criar");
     }

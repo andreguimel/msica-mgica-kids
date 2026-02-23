@@ -162,6 +162,28 @@ export default function Payment() {
   const [packageSongs, setPackageSongs] = useState<PackageSong[]>(getPackageSongs());
   const isPackageSong = isPacote && songsRemaining > 0;
 
+  // Fire InitiateCheckout pixel event
+  useEffect(() => {
+    if (typeof window.fbq === "function") {
+      window.fbq("track", "InitiateCheckout", {
+        content_name: plan?.label,
+        value: parseFloat(displayPrice.replace(",", ".")),
+        currency: "BRL",
+      });
+    }
+  }, []);
+
+  // Fire Purchase pixel event when completed
+  useEffect(() => {
+    if (paymentState === "completed" && typeof window.fbq === "function") {
+      window.fbq("track", "Purchase", {
+        content_name: plan?.label,
+        value: parseFloat(displayPrice.replace(",", ".")),
+        currency: "BRL",
+      });
+    }
+  }, [paymentState]);
+
   // Load task data
   useEffect(() => {
     const stored = localStorage.getItem("musicData");
