@@ -290,7 +290,7 @@ export default function Preview() {
               </MagicButton>
 
               <p className="text-center text-xs text-muted-foreground mt-4">
-                🛡️ Garantia de funcionamento — reembolso via Pix em caso de erro técnico
+                ✅ Pagamento seguro via Pix • Download instantâneo
               </p>
             </div>
           </motion.div>

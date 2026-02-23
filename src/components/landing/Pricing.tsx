@@ -147,7 +147,7 @@ export function Pricing() {
                 )}
               </MagicButton>
               <p className="text-xs text-muted-foreground text-center mt-3">
-                🛡️ 7 dias de garantia • Reembolso total via Pix
+                ✅ Pagamento seguro via Pix • Download instantâneo
               </p>
             </motion.div>
           ))}
@@ -161,9 +161,9 @@ export function Pricing() {
           className="text-center mt-12"
         >
           <div className="inline-flex items-center gap-2 px-6 py-3 bg-mint/20 rounded-full">
-            <span className="text-2xl">🛡️</span>
+            <span className="text-2xl">✅</span>
             <span className="text-sm font-medium">
-              Garantia de funcionamento — reembolso via Pix em caso de erro técnico
+              Pagamento seguro e instantâneo via Pix
             </span>
           </div>
         </motion.div>

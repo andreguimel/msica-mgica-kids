@@ -171,7 +171,7 @@ export function Hero() {
               transition={{ delay: 0.55 }}
               className="text-xs text-muted-foreground text-center lg:text-left mb-4"
             >
-              🛡️ Garantia de 7 dias • Reembolso total via Pix
+              ✅ Pagamento seguro via Pix • Download instantâneo
             </motion.p>
 
             {/* Mini depoimentos abaixo do CTA */}
