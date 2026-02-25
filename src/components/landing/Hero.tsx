@@ -154,15 +154,8 @@ export function Hero() {
               className="w-full sm:w-auto">
 
                 <Music className="w-5 h-5" />
-                Criar a música mágica agora!
+                Crie a letra da música grátis agora!
               </MagicButton>
-              
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">Por apenas</p>
-                <p className="text-3xl font-baloo font-extrabold text-primary">
-                  R$ 9,90
-                </p>
-              </div>
             </motion.div>
 
             <motion.p
