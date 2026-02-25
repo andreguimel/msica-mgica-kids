@@ -87,9 +87,6 @@ export default function CreateMusic() {
     }
   }, []);
   const [hasCustomLyrics, setHasCustomLyrics] = useState(false);
-  const [selectedPlanChoice, setSelectedPlanChoice] = useState<"single" | "pacote">(
-    (localStorage.getItem("selectedPlan") as "single" | "pacote") || "single"
-  );
   const [formData, setFormData] = useState<FormData>({
     childName: "",
     ageGroup: "",
@@ -145,13 +142,9 @@ export default function CreateMusic() {
         lyrics = result.lyrics;
       }
 
-      localStorage.setItem("selectedPlan", selectedPlanChoice);
-      
-      // Clear package state when starting a fresh single purchase
-      if (selectedPlanChoice === "single") {
-        localStorage.removeItem("packageSongsRemaining");
-        localStorage.removeItem("packageSongs");
-      }
+      localStorage.setItem("selectedPlan", "single");
+      localStorage.removeItem("packageSongsRemaining");
+      localStorage.removeItem("packageSongs");
       
       localStorage.setItem(
         "musicResult",
@@ -524,55 +517,6 @@ export default function CreateMusic() {
               </ul>
             </div>
 
-            {/* Escolha do plano */}
-            {!isPackageFollowUp && (
-              <div className="card-float">
-                <h3 className="font-baloo font-bold text-lg mb-4">Escolha seu plano:</h3>
-                <div className="space-y-3">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedPlanChoice("single")}
-                    className={`w-full text-left p-4 rounded-2xl border-2 transition-all ${
-                      selectedPlanChoice === "single"
-                        ? "border-primary bg-primary/10"
-                        : "border-border hover:border-primary/40"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-bold">🎵 Música Mágica</p>
-                        <p className="text-xs text-muted-foreground">1 música personalizada</p>
-                      </div>
-                      <p className="text-xl font-baloo font-extrabold text-gradient">R$ 9,90</p>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setSelectedPlanChoice("pacote")}
-                    className={`w-full text-left p-4 rounded-2xl border-2 transition-all relative overflow-hidden ${
-                      selectedPlanChoice === "pacote"
-                        ? "border-secondary bg-secondary/10"
-                        : "border-border hover:border-secondary/40"
-                    }`}
-                  >
-                    <span className="absolute top-0 right-0 bg-secondary text-secondary-foreground text-[10px] font-bold px-2 py-0.5 rounded-bl-lg">
-                      MAIS POPULAR
-                    </span>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-bold">🎁 Pacote Encantado</p>
-                        <p className="text-xs text-muted-foreground">3 músicas personalizadas</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xl font-baloo font-extrabold text-gradient">R$ 24,90</p>
-                        <p className="text-[10px] text-muted-foreground line-through">R$ 29,70</p>
-                      </div>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            )}
           </motion.div>
         </div>
       </div>
