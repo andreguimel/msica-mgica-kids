@@ -188,6 +188,17 @@ export default function Preview() {
             transition={{ delay: 0.4 }}
             className="space-y-6"
           >
+            {/* Frase chamativa */}
+            <div className="card-float bg-gradient-to-br from-primary/15 via-lavender/10 to-secondary/15 border-2 border-primary/20 text-center">
+              <div className="text-4xl mb-3">🎶✨</div>
+              <h3 className="font-baloo font-bold text-lg leading-snug mb-2">
+                Agora imagine essa letra ganhando vida com <span className="text-gradient">melodia, voz e ritmo!</span>
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Transforme em uma música de verdade para <strong className="text-foreground">{formData.childName}</strong> 🎵
+              </p>
+            </div>
+
             {/* O que você recebe */}
             <div className="card-float">
               <h3 className="font-baloo font-bold text-lg mb-4">Ao comprar você recebe:</h3>
