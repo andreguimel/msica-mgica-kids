@@ -6,7 +6,7 @@ import { StepGenerating } from "./StepGenerating";
 import { StepPlayer } from "./StepPlayer";
 
 const DEMO_SONGS = [
-  { name: "Pedro", theme: "Animais da Floresta", url: "/audio/demo-song.mp3", emoji: "🐾" },
+  { name: "Pedro", theme: "Super-Herói", url: "/audio/demo-song.mp3", emoji: "🦸" },
   { name: "Amanda", theme: "Princesas Encantadas", url: "/audio/demo-amanda.mp3", emoji: "👑" },
   { name: "Isabela", theme: "Natureza Mágica", url: "/audio/demo-isabela.mp3", emoji: "🌿" },
 ];
