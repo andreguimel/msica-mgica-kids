@@ -3,11 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { RefreshCw, LogOut, ShoppingCart, CheckCircle, XCircle, TrendingUp, DollarSign } from "lucide-react";
+import { RefreshCw, LogOut, ShoppingCart, CheckCircle, XCircle, TrendingUp, DollarSign, Search, FileDown, Play } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import OrderDetailModal from "@/components/admin/OrderDetailModal";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -38,6 +40,11 @@ interface Order {
   billing_id: string | null;
   music_style: string | null;
   age_group: string;
+  lyrics: string | null;
+  audio_url: string | null;
+  download_url: string | null;
+  access_code: string | null;
+  download_expires_at: string | null;
 }
 
 const FUNNEL_COLORS = ["hsl(var(--primary))", "hsl(var(--accent))", "hsl(142 76% 36%)", "hsl(262 83% 58%)"];
@@ -52,6 +59,28 @@ function statusBadge(status: string | null) {
   }
 }
 
+function exportCSV(orders: Order[]) {
+  const headers = ["Nome", "Tema", "Estilo", "Email", "Pagamento", "Status", "Data", "Código Acesso"];
+  const rows = orders.map(o => [
+    o.child_name,
+    o.theme,
+    o.music_style || "",
+    o.user_email || "",
+    o.payment_status || "",
+    o.status,
+    new Date(o.created_at).toLocaleDateString("pt-BR"),
+    o.access_code || "",
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `pedidos-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function AdminDashboard() {
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [funnel, setFunnel] = useState<FunnelItem[]>([]);
@@ -59,6 +88,8 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -75,13 +106,11 @@ export default function AdminDashboard() {
           Authorization: `Bearer ${token}`,
         },
       });
-
       if (res.status === 401) {
         sessionStorage.removeItem("admin_token");
         navigate("/admin");
         return;
       }
-
       const data = await res.json();
       setMetrics(data.metrics);
       setFunnel(data.funnel);
@@ -103,11 +132,17 @@ export default function AdminDashboard() {
     fetchData(v);
   };
 
-  const filteredOrders = statusFilter === "all"
-    ? orders
-    : statusFilter === "abandoned"
-      ? orders.filter(o => o.payment_status === "expired" || o.payment_status === "cancelled")
-      : orders.filter(o => o.payment_status === statusFilter);
+  const filteredOrders = orders
+    .filter(o => {
+      if (statusFilter === "all") return true;
+      if (statusFilter === "abandoned") return o.payment_status === "expired" || o.payment_status === "cancelled";
+      return o.payment_status === statusFilter;
+    })
+    .filter(o => {
+      if (!search) return true;
+      const q = search.toLowerCase();
+      return o.child_name.toLowerCase().includes(q) || (o.user_email?.toLowerCase().includes(q) ?? false);
+    });
 
   const handleLogout = () => {
     sessionStorage.removeItem("admin_token");
@@ -205,8 +240,22 @@ export default function AdminDashboard() {
       {/* Filters + Table */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-2">
-          <CardTitle className="text-lg">Pedidos</CardTitle>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-3">
+            <CardTitle className="text-lg">Pedidos</CardTitle>
+            <span className="text-sm text-muted-foreground">
+              {filteredOrders.length} resultado{filteredOrders.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar nome ou email..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 w-[200px]"
+              />
+            </div>
             <Select value={period} onValueChange={handlePeriodChange}>
               <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -224,6 +273,9 @@ export default function AdminDashboard() {
                 <SelectItem value="abandoned">Abandonados</SelectItem>
               </SelectContent>
             </Select>
+            <Button variant="outline" size="sm" onClick={() => exportCSV(filteredOrders)} disabled={filteredOrders.length === 0}>
+              <FileDown className="h-4 w-4 mr-1" /> CSV
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -232,6 +284,7 @@ export default function AdminDashboard() {
               <TableRow>
                 <TableHead>Criança</TableHead>
                 <TableHead>Tema</TableHead>
+                <TableHead className="hidden md:table-cell">Estilo</TableHead>
                 <TableHead className="hidden md:table-cell">Email</TableHead>
                 <TableHead>Pagamento</TableHead>
                 <TableHead className="hidden md:table-cell">Música</TableHead>
@@ -240,9 +293,15 @@ export default function AdminDashboard() {
             </TableHeader>
             <TableBody>
               {filteredOrders.map((o) => (
-                <TableRow key={o.id}>
-                  <TableCell className="font-medium">{o.child_name}</TableCell>
+                <TableRow key={o.id} className="cursor-pointer" onClick={() => setSelectedOrder(o)}>
+                  <TableCell className="font-medium">
+                    <span className="flex items-center gap-1.5">
+                      {o.audio_url && <Play className="h-3.5 w-3.5 text-green-500 shrink-0" />}
+                      {o.child_name}
+                    </span>
+                  </TableCell>
                   <TableCell>{o.theme}</TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground text-xs">{o.music_style || "—"}</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground text-xs">{o.user_email || "—"}</TableCell>
                   <TableCell>{statusBadge(o.payment_status)}</TableCell>
                   <TableCell className="hidden md:table-cell">
@@ -255,7 +314,7 @@ export default function AdminDashboard() {
               ))}
               {filteredOrders.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                     Nenhum pedido encontrado
                   </TableCell>
                 </TableRow>
@@ -264,6 +323,8 @@ export default function AdminDashboard() {
           </Table>
         </CardContent>
       </Card>
+
+      <OrderDetailModal order={selectedOrder} open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)} />
     </div>
   );
 }
