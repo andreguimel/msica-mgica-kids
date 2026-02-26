@@ -1,7 +1,12 @@
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, ExternalLink, Music, Mail, Calendar, User, Palette, Clock } from "lucide-react";
+import { Download, ExternalLink, Music, Mail, Calendar, User, Palette, Clock, Send } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 interface Order {
   id: string;
@@ -38,7 +43,36 @@ interface Props {
 }
 
 export default function OrderDetailModal({ order, open, onOpenChange }: Props) {
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const { toast } = useToast();
+
   if (!order) return null;
+
+  const canSendRecovery = order.user_email && (order.payment_status === "expired" || order.payment_status === "cancelled" || order.payment_status === "pending");
+
+  const handleSendRecoveryEmail = async () => {
+    if (!order.user_email) return;
+    setSendingEmail(true);
+    try {
+      const token = sessionStorage.getItem("admin_token");
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/send-recovery-email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ email: order.user_email, childName: order.child_name }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erro ao enviar");
+      toast({ title: "✅ Email enviado!", description: `Email de recuperação enviado para ${order.user_email}` });
+    } catch (e: any) {
+      toast({ title: "Erro", description: e.message || "Falha ao enviar email", variant: "destructive" });
+    } finally {
+      setSendingEmail(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -92,6 +126,19 @@ export default function OrderDetailModal({ order, open, onOpenChange }: Props) {
             <Clock className="h-3.5 w-3.5" />
             Download expira em: {new Date(order.download_expires_at).toLocaleString("pt-BR")}
           </div>
+        )}
+
+        {/* Recovery Email Button */}
+        {canSendRecovery && (
+          <Button
+            size="sm"
+            onClick={handleSendRecoveryEmail}
+            disabled={sendingEmail}
+            className="w-full"
+          >
+            <Send className="h-4 w-4 mr-2" />
+            {sendingEmail ? "Enviando..." : "Enviar Email de Recuperação"}
+          </Button>
         )}
 
         {/* Audio Player */}
