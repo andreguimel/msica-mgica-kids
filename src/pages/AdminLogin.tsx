@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Lock, LogIn } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Lock, LogIn, ShieldCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -12,12 +13,18 @@ const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 export default function AdminLogin() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [notRobot, setNotRobot] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!password.trim()) return;
+
+    if (!notRobot) {
+      toast({ title: "Verificação", description: "Confirme que você não é um robô", variant: "destructive" });
+      return;
+    }
 
     setLoading(true);
     try {
@@ -64,7 +71,18 @@ export default function AdminLogin() {
               onChange={(e) => setPassword(e.target.value)}
               autoFocus
             />
-            <Button type="submit" className="w-full" disabled={loading}>
+            <div className="flex items-center space-x-3 rounded-md border border-input bg-muted/30 p-3">
+              <Checkbox
+                id="not-robot"
+                checked={notRobot}
+                onCheckedChange={(v) => setNotRobot(v === true)}
+              />
+              <label htmlFor="not-robot" className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                <ShieldCheck className="h-4 w-4 text-primary" />
+                Não sou um robô
+              </label>
+            </div>
+            <Button type="submit" className="w-full" disabled={loading || !notRobot}>
               <LogIn className="h-4 w-4 mr-2" />
               {loading ? "Entrando..." : "Entrar"}
             </Button>
