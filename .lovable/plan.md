@@ -1,47 +1,67 @@
 
 
-## Dashboard Admin - Versao Completa
+## Mockup Animado Infantil no Hero - Passo a Passo Magico
 
-### O que vai mudar
+### Conceito
 
-**1. Edge Function `admin-dashboard`** -- Incluir mais campos na query:
-- `lyrics` (letra da musica)
-- `audio_url` (URL do audio gerado)
-- `download_url` (URL de download assinada)
-- `access_code` (codigo de acesso do usuario)
-- `download_expires_at` (expiracao do download)
+Em vez de simular um app/celular, o lado direito do Hero sera um **"quadro magico" ilustrado** com visual de livro infantil / cartao encantado. Cada etapa sera representada com emojis grandes, cores vibrantes, animacoes divertidas (bounce, wiggle, sparkle) e linguagem ludica. O player real continua integrado na ultima etapa.
 
-A query `select` sera expandida para trazer todos esses campos junto com os que ja existem.
+### As 4 Etapas (ciclo automatico)
 
-**2. Frontend `AdminDashboard.tsx`** -- Melhorias significativas:
+**Etapa 1 - "Qual o nome da crianca?" (~3.5s)**
+- Fundo suave com estrelinhas
+- Emoji grande de bebe/crianca no topo
+- Um "balao magico" onde o nome "Pedro" aparece letra por letra com efeito bouncy (cada letra pula ao surgir)
+- Confetes coloridos surgem ao completar o nome
+- Texto fofo: "Escrevendo o nome magico... ✨"
 
-- **Modal de detalhes do pedido**: Ao clicar em uma linha da tabela, abre um Dialog com todas as informacoes:
-  - Nome da crianca, tema, estilo musical, faixa etaria
-  - Email do cliente
-  - Status de pagamento e status da musica
-  - Letra completa (se existir)
-  - Player de audio inline (se a musica foi gerada)
-  - Botao para abrir/baixar o MP3
-  - Codigo de acesso e data de expiracao do download
+**Etapa 2 - "Escolhendo o tema!" (~3.5s)**
+- Tres opcoes com emojis gigantes pulando: 🐾 Animais, 👑 Princesas, 🚀 Espaco
+- Um deles recebe um "brilho" dourado e aumenta de tamanho como se fosse escolhido
+- Texto fofo: "Hmm... esse tema e perfeito! 🎯"
 
-- **Coluna de estilo musical** na tabela (visivel em desktop)
-- **Indicador visual** na tabela quando a musica tem audio disponivel (icone de play)
-- **Busca por nome/email** com campo de texto para filtrar pedidos
-- **Contador de resultados** mostrando quantos pedidos estao sendo exibidos
-- **Exportar CSV** dos pedidos filtrados
+**Etapa 3 - "A magia esta acontecendo!" (~3.5s)**
+- Emojis de notas musicais, varinhas, estrelas girando em circulo
+- Uma barra de progresso colorida (gradiente arco-iris) preenchendo com animacao
+- Texto pulsando: "Criando sua musica magica... 🪄✨"
+- Pequenas notas musicais "saem" da barra ao preencher
 
-### Arquivos modificados
+**Etapa 4 - "Prontinho! Olha que lindo!" (~8s+)**
+- Emojis de crianca dancando, confetes, coracao
+- Transicao suave para o **player funcional real** com as demos
+- O player mantem toda a logica atual (play/pause/skip, ondas sonoras, troca de musica)
+- Texto: "A musica ficou pronta! Aperte o play! 🎵"
+
+### Visual do "quadro"
+
+- Nao e um mockup de celular - e um card grande arredondado com borda colorida pontilhada ou tracejada (estilo infantil)
+- Fundo com gradiente suave pastel que muda levemente a cada etapa
+- Indicador de etapas no topo: 4 bolinhas coloridas (tipo dots de carousel) com a ativa pulsando
+- Cantos decorados com emojis fixos (estrela, arco-iris, nota musical)
+
+### Comportamento
+
+- Ciclo automatico: etapas 1-3 rodam em loop, etapa 4 fica mais tempo
+- Se o usuario clicar play no player (etapa 4), o ciclo pausa e permanece na etapa 4
+- Quando o audio para, o ciclo recomeça apos 3 segundos
+- Transicoes entre etapas: fade + scale suave (nada brusco)
+
+### Arquivo modificado
 
 | Arquivo | Mudanca |
 |---------|---------|
-| `supabase/functions/admin-dashboard/index.ts` | Expandir select para incluir lyrics, audio_url, download_url, access_code, download_expires_at |
-| `src/pages/AdminDashboard.tsx` | Modal de detalhes, busca, coluna estilo, player de audio, exportar CSV |
+| `src/components/landing/Hero.tsx` | Substituir a area do mockup (lado direito) pelo quadro animado de 4 etapas com player integrado na etapa final. Toda a logica de audio (audioRef, togglePlay, changeSong, progress, etc) permanece. |
 
 ### Detalhes tecnicos
 
-- O modal usara o componente `Dialog` do shadcn/ui ja disponivel
-- O player de audio usara a tag `<audio>` nativa do HTML com `controls`
-- A busca filtra localmente os dados ja carregados (sem nova requisicao)
-- O export CSV gera o arquivo no navegador e faz download automatico
-- Interface `Order` sera expandida com os novos campos (lyrics, audio_url, download_url, access_code, download_expires_at)
+- Estado `mockupStep` (0-3) com `setInterval` controlando a troca
+- Duracao por etapa: steps 0-2 = 3500ms, step 3 = 8000ms
+- Efeito typewriter no step 0: `useState` com `setInterval` de 180ms por caractere, cada letra entra com `motion.span` e animacao bounce
+- Step 1 (tema): `motion.div` com `whileInView` scale + glow no item selecionado
+- Step 2 (gerando): `motion.div` width animando de 0% a 100% com gradiente arco-iris
+- Step 3: reutiliza o player existente (imagem heroImage, controles play/pause/skip, ondas sonoras, dots de musica)
+- `AnimatePresence mode="wait"` para transicoes entre etapas
+- Quando `isPlaying === true`, limpa o interval e fixa no step 3
+- A imagem `heroImage` permanece como capa do player na etapa final
+- Decoracoes flutuantes (balao, arco-iris) permanecem ao redor do quadro
 
