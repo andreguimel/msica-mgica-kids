@@ -1,0 +1,113 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+async function verifyToken(token: string, secret: string): Promise<boolean> {
+  try {
+    const [payloadB64, sigB64] = token.split('.');
+    if (!payloadB64 || !sigB64) return false;
+
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['verify']
+    );
+
+    const sigBytes = Uint8Array.from(atob(sigB64), c => c.charCodeAt(0));
+    const valid = await crypto.subtle.verify('HMAC', key, sigBytes, encoder.encode(payloadB64));
+    if (!valid) return false;
+
+    const payload = JSON.parse(atob(payloadB64));
+    if (payload.exp < Date.now()) return false;
+
+    return payload.role === 'admin';
+  } catch {
+    return false;
+  }
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const adminSecret = Deno.env.get('ADMIN_SECRET');
+    if (!adminSecret) {
+      return new Response(JSON.stringify({ error: 'Server misconfigured' }), {
+        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Verify admin token
+    const authHeader = req.headers.get('authorization') || '';
+    const token = authHeader.replace('Bearer ', '');
+    if (!token || !(await verifyToken(token, adminSecret))) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, serviceKey);
+
+    // Parse query params
+    const url = new URL(req.url);
+    const period = url.searchParams.get('period') || 'all'; // 7d, 30d, all
+
+    let query = supabase
+      .from('music_tasks')
+      .select('id, child_name, theme, user_email, payment_status, status, created_at, billing_id, music_style, age_group')
+      .order('created_at', { ascending: false });
+
+    if (period === '7d') {
+      const d = new Date();
+      d.setDate(d.getDate() - 7);
+      query = query.gte('created_at', d.toISOString());
+    } else if (period === '30d') {
+      const d = new Date();
+      d.setDate(d.getDate() - 30);
+      query = query.gte('created_at', d.toISOString());
+    }
+
+    const { data: orders, error } = await query;
+    if (error) throw error;
+
+    // Compute metrics
+    const total = orders?.length || 0;
+    const paid = orders?.filter(o => o.payment_status === 'paid').length || 0;
+    const pending = orders?.filter(o => o.payment_status === 'pending').length || 0;
+    const expired = orders?.filter(o => o.payment_status === 'expired' || o.payment_status === 'cancelled').length || 0;
+    const completed = orders?.filter(o => o.status === 'completed').length || 0;
+    const conversionRate = total > 0 ? Math.round((paid / total) * 100) : 0;
+    const estimatedRevenue = paid * 29.90; // preço base
+
+    // Funnel data
+    const funnel = [
+      { stage: 'Checkout Iniciado', count: total },
+      { stage: 'Pagamento Pendente', count: pending + paid + completed },
+      { stage: 'Pago', count: paid },
+      { stage: 'Música Gerada', count: completed },
+    ];
+
+    return new Response(JSON.stringify({
+      metrics: { total, paid, pending, expired, completed, conversionRate, estimatedRevenue },
+      funnel,
+      orders: orders || [],
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), {
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+});

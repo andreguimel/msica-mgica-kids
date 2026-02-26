@@ -32,3 +32,9 @@ verify_jwt = false
 
 [functions.abacatepay-webhook]
 verify_jwt = false
+
+[functions.admin-login]
+verify_jwt = false
+
+[functions.admin-dashboard]
+verify_jwt = false
