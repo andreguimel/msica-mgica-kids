@@ -133,7 +133,7 @@ export function MagicMockup() {
         </div>
 
         {/* Step content */}
-        <div className="min-h-[320px] flex items-center justify-center">
+        <div className="h-[340px] sm:h-[380px] flex items-center justify-center overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.div
               key={mockupStep}
