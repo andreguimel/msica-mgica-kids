@@ -1,14 +1,14 @@
 import { motion } from "framer-motion";
 
 const floatingItems = [
-  { emoji: "⭐", size: "text-2xl", delay: 0 },
-  { emoji: "🎵", size: "text-3xl", delay: 0.2 },
-  { emoji: "✨", size: "text-xl", delay: 0.4 },
-  { emoji: "🎶", size: "text-2xl", delay: 0.6 },
-  { emoji: "💫", size: "text-xl", delay: 0.8 },
-  { emoji: "🌟", size: "text-3xl", delay: 1 },
-  { emoji: "🎤", size: "text-2xl", delay: 1.2 },
-  { emoji: "🦋", size: "text-xl", delay: 1.4 },
+  { emoji: "⭐", size: "text-2xl", delay: 0, left: "2%", top: "8%" },
+  { emoji: "🎵", size: "text-3xl", delay: 0.2, left: "92%", top: "12%" },
+  { emoji: "✨", size: "text-xl", delay: 0.4, left: "5%", top: "75%" },
+  { emoji: "🎶", size: "text-2xl", delay: 0.6, left: "95%", top: "70%" },
+  { emoji: "💫", size: "text-xl", delay: 0.8, left: "8%", top: "45%" },
+  { emoji: "🌟", size: "text-3xl", delay: 1, left: "90%", top: "85%" },
+  { emoji: "🎤", size: "text-2xl", delay: 1.2, left: "3%", top: "90%" },
+  { emoji: "🦋", size: "text-xl", delay: 1.4, left: "88%", top: "40%" },
 ];
 
 export function FloatingElements() {
@@ -19,12 +19,12 @@ export function FloatingElements() {
           key={index}
           className={`absolute ${item.size}`}
           style={{
-            left: `${10 + index * 12}%`,
-            top: `${20 + (index % 3) * 25}%`,
+            left: item.left,
+            top: item.top,
           }}
           initial={{ opacity: 0, y: 20 }}
           animate={{
-            opacity: [0.4, 0.8, 0.4],
+            opacity: [0.2, 0.45, 0.2],
             y: [0, -20, 0],
             rotate: [0, 10, -10, 0],
           }}
