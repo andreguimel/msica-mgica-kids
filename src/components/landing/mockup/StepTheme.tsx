@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
 const THEMES = [
-  { emoji: "🐾", label: "Animais" },
   { emoji: "👑", label: "Princesas" },
+  { emoji: "🦸", label: "Super-Herói" },
   { emoji: "🚀", label: "Espaço" },
 ];
 
@@ -11,7 +11,7 @@ export function StepTheme() {
   const [selected, setSelected] = useState(-1);
 
   useEffect(() => {
-    const timer = setTimeout(() => setSelected(0), 1200);
+    const timer = setTimeout(() => setSelected(1), 1200);
     return () => clearTimeout(timer);
   }, []);
 
