@@ -49,7 +49,7 @@ export function StepPlayer({
       <div className="text-center">
         <AnimatePresence mode="wait">
           <motion.div key={songIndex} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-            <h3 className="font-baloo font-bold text-base text-foreground">✨ Música da {song.name} ✨</h3>
+            <h3 className="font-baloo font-bold text-base text-foreground">✨ Música do {song.name} ✨</h3>
             <p className="text-xs text-muted-foreground">{song.emoji} Tema: {song.theme}</p>
           </motion.div>
         </AnimatePresence>
