@@ -33,7 +33,7 @@ export function Hero() {
   useEffect(() => {
     const interval = setInterval(() => {
       setHeadlineIndex((prev) => (prev + 1) % HEADLINES.length);
-    }, 4000);
+    }, 6000);
     return () => clearInterval(interval);
   }, []);
 
@@ -142,7 +142,7 @@ export function Hero() {
               <span>Feito com IA + Muito Amor</span>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-4xl md:text-5xl lg:text-6xl font-baloo font-extrabold leading-tight mb-6 h-[2.4em]">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-3xl md:text-4xl lg:text-5xl font-baloo font-extrabold leading-tight mb-6 h-[2.4em]">
               <AnimatePresence mode="wait">
                 <motion.h1
                   key={headlineIndex}
