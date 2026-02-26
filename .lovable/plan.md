@@ -1,55 +1,47 @@
 
-## Painel Administrativo com Funil de Vendas
 
-### O que sera criado
+## Dashboard Admin - Versao Completa
 
-Um painel administrativo completo, protegido por senha, acessivel em `/admin`, para visualizar todos os pedidos, checkouts abandonados e metricas de funil de vendas em tempo real.
+### O que vai mudar
 
-### Como funciona a autenticacao
+**1. Edge Function `admin-dashboard`** -- Incluir mais campos na query:
+- `lyrics` (letra da musica)
+- `audio_url` (URL do audio gerado)
+- `download_url` (URL de download assinada)
+- `access_code` (codigo de acesso do usuario)
+- `download_expires_at` (expiracao do download)
 
-- Pagina de login simples com campo de senha
-- A senha e validada no servidor contra o `ADMIN_SECRET` ja configurado
-- O servidor retorna um token temporario (valido por 24h) que fica salvo no navegador
-- Ao fechar o navegador, o acesso expira automaticamente
+A query `select` sera expandida para trazer todos esses campos junto com os que ja existem.
 
-### O que o painel vai mostrar
+**2. Frontend `AdminDashboard.tsx`** -- Melhorias significativas:
 
-**Cards de metricas no topo:**
-- Total de pedidos criados
-- Pagamentos confirmados (pagos)
-- Checkouts abandonados (expirados/cancelados)
-- Taxa de conversao (% de pagos vs total)
-- Receita estimada
+- **Modal de detalhes do pedido**: Ao clicar em uma linha da tabela, abre um Dialog com todas as informacoes:
+  - Nome da crianca, tema, estilo musical, faixa etaria
+  - Email do cliente
+  - Status de pagamento e status da musica
+  - Letra completa (se existir)
+  - Player de audio inline (se a musica foi gerada)
+  - Botao para abrir/baixar o MP3
+  - Codigo de acesso e data de expiracao do download
 
-**Funil de vendas visual (grafico):**
-```text
-Checkout Iniciado  ████████████████████  100%
-Pagamento Pendente ██████████████       70%
-Pago               ████████             40%
-Musica Gerada      ██████               30%
-```
+- **Coluna de estilo musical** na tabela (visivel em desktop)
+- **Indicador visual** na tabela quando a musica tem audio disponivel (icone de play)
+- **Busca por nome/email** com campo de texto para filtrar pedidos
+- **Contador de resultados** mostrando quantos pedidos estao sendo exibidos
+- **Exportar CSV** dos pedidos filtrados
 
-**Tabela de pedidos com filtros:**
-- Filtrar por status: todos, pagos, pendentes, abandonados
-- Filtrar por periodo: 7 dias, 30 dias, todos
-- Colunas: crianca, tema, email, status pagamento, status musica, data
-- Ordenacao por data (mais recente primeiro)
+### Arquivos modificados
 
-### Arquivos que serao criados/modificados
-
-| Arquivo | Acao | Descricao |
-|---------|------|-----------|
-| `supabase/functions/admin-login/index.ts` | Criar | Valida senha e retorna token |
-| `supabase/functions/admin-dashboard/index.ts` | Criar | Retorna dados dos pedidos (protegido por token) |
-| `src/pages/AdminLogin.tsx` | Criar | Tela de login com campo de senha |
-| `src/pages/AdminDashboard.tsx` | Criar | Painel com metricas, funil e tabela |
-| `src/App.tsx` | Modificar | Adicionar rotas `/admin` e `/admin/dashboard` |
+| Arquivo | Mudanca |
+|---------|---------|
+| `supabase/functions/admin-dashboard/index.ts` | Expandir select para incluir lyrics, audio_url, download_url, access_code, download_expires_at |
+| `src/pages/AdminDashboard.tsx` | Modal de detalhes, busca, coluna estilo, player de audio, exportar CSV |
 
 ### Detalhes tecnicos
 
-- Token gerado com HMAC-SHA256 usando o `ADMIN_SECRET` como chave
-- Edge Function `admin-dashboard` consulta a tabela `music_tasks` e agrega os dados no servidor
-- Frontend usa React Query para buscar dados com botao de refresh manual
-- Graficos do funil usando `recharts` (ja instalado)
-- Tabela usando componentes shadcn/ui (ja disponiveis)
-- Nenhuma alteracao no banco de dados necessaria -- usa a tabela `music_tasks` existente
+- O modal usara o componente `Dialog` do shadcn/ui ja disponivel
+- O player de audio usara a tag `<audio>` nativa do HTML com `controls`
+- A busca filtra localmente os dados ja carregados (sem nova requisicao)
+- O export CSV gera o arquivo no navegador e faz download automatico
+- Interface `Order` sera expandida com os novos campos (lyrics, audio_url, download_url, access_code, download_expires_at)
+
