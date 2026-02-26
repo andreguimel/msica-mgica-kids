@@ -1,22 +1,55 @@
 
+## Painel Administrativo com Funil de Vendas
 
-## Adicionar frase chamativa na coluna direita da Preview
+### O que sera criado
 
-### O que muda
+Um painel administrativo completo, protegido por senha, acessivel em `/admin`, para visualizar todos os pedidos, checkouts abandonados e metricas de funil de vendas em tempo real.
 
-**Arquivo:** `src/pages/Preview.tsx`
+### Como funciona a autenticacao
 
-Adicionar um bloco chamativo no topo da coluna direita (antes de "Ao comprar voce recebe:") com uma frase que incentive o usuario a transformar a letra em musica com melodia e voz.
+- Pagina de login simples com campo de senha
+- A senha e validada no servidor contra o `ADMIN_SECRET` ja configurado
+- O servidor retorna um token temporario (valido por 24h) que fica salvo no navegador
+- Ao fechar o navegador, o acesso expira automaticamente
 
-### Frase proposta
+### O que o painel vai mostrar
 
-Um card com destaque visual contendo algo como:
+**Cards de metricas no topo:**
+- Total de pedidos criados
+- Pagamentos confirmados (pagos)
+- Checkouts abandonados (expirados/cancelados)
+- Taxa de conversao (% de pagos vs total)
+- Receita estimada
 
-> "Agora imagine essa letra ganhando vida com melodia, voz e ritmo! Transforme em uma musica de verdade para {nome da crianca}!"
+**Funil de vendas visual (grafico):**
+```text
+Checkout Iniciado  ████████████████████  100%
+Pagamento Pendente ██████████████       70%
+Pago               ████████             40%
+Musica Gerada      ██████               30%
+```
 
-### Detalhe tecnico
+**Tabela de pedidos com filtros:**
+- Filtrar por status: todos, pagos, pendentes, abandonados
+- Filtrar por periodo: 7 dias, 30 dias, todos
+- Colunas: crianca, tema, email, status pagamento, status musica, data
+- Ordenacao por data (mais recente primeiro)
 
-- Inserir um novo `div` com estilo chamativo (gradiente, icone de nota musical) logo antes do bloco "Ao comprar voce recebe:" dentro da `motion.div` da coluna direita (linha ~191)
-- Usar o nome da crianca (`formData.childName`) para personalizar a frase
-- Estilo: card com fundo gradiente suave, emoji ou icone de som/musica, texto em destaque com `font-baloo`
+### Arquivos que serao criados/modificados
 
+| Arquivo | Acao | Descricao |
+|---------|------|-----------|
+| `supabase/functions/admin-login/index.ts` | Criar | Valida senha e retorna token |
+| `supabase/functions/admin-dashboard/index.ts` | Criar | Retorna dados dos pedidos (protegido por token) |
+| `src/pages/AdminLogin.tsx` | Criar | Tela de login com campo de senha |
+| `src/pages/AdminDashboard.tsx` | Criar | Painel com metricas, funil e tabela |
+| `src/App.tsx` | Modificar | Adicionar rotas `/admin` e `/admin/dashboard` |
+
+### Detalhes tecnicos
+
+- Token gerado com HMAC-SHA256 usando o `ADMIN_SECRET` como chave
+- Edge Function `admin-dashboard` consulta a tabela `music_tasks` e agrega os dados no servidor
+- Frontend usa React Query para buscar dados com botao de refresh manual
+- Graficos do funil usando `recharts` (ja instalado)
+- Tabela usando componentes shadcn/ui (ja disponiveis)
+- Nenhuma alteracao no banco de dados necessaria -- usa a tabela `music_tasks` existente
