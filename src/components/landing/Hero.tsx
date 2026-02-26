@@ -7,6 +7,12 @@ import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
 import { MagicButton } from "@/components/ui/MagicButton";
 import heroImage from "@/assets/hero-animals-music.jpg";
 
+const HEADLINES = [
+  "Uma Música Única para o Amor da Sua Vida",
+  "Crie a Música do Seu Filho(a) e Eternize Esse Momento",
+  "Transforme o Nome do Seu Filho(a) em Canção Mágica",
+];
+
 const DEMO_SONGS = [
 { name: "Pedro", theme: "Animais da Floresta", url: "/audio/demo-song.mp3", emoji: "🐾" },
 { name: "Amanda", theme: "Princesas Encantadas", url: "/audio/demo-amanda.mp3", emoji: "👑" },
@@ -21,6 +27,15 @@ export function Hero() {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [songIndex, setSongIndex] = useState(0);
+
+  const [headlineIndex, setHeadlineIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setHeadlineIndex((prev) => (prev + 1) % HEADLINES.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
 
   const [initialCount] = useState(() => 1234 + Math.floor(Math.random() * 500));
   const [todayCount] = useState(() => Math.floor(37 + Math.random() * 10));
@@ -127,9 +142,19 @@ export function Hero() {
               <span>Feito com IA + Muito Amor</span>
             </motion.div>
 
-            <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-4xl md:text-5xl lg:text-6xl font-baloo font-extrabold leading-tight mb-6">
-              <span className="text-gradient">Música Mágica para Crianças 🎶</span>
-            </motion.h1>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-4xl md:text-5xl lg:text-6xl font-baloo font-extrabold leading-tight mb-6 h-[2.4em]">
+              <AnimatePresence mode="wait">
+                <motion.h1
+                  key={headlineIndex}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <span className="text-gradient">{HEADLINES[headlineIndex]} 🎶</span>
+                </motion.h1>
+              </AnimatePresence>
+            </motion.div>
 
             <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0">
 
