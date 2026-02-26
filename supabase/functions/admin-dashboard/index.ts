@@ -59,9 +59,24 @@ serve(async (req) => {
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
+    // Handle DELETE
+    if (req.method === 'DELETE') {
+      const { ids } = await req.json();
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return new Response(JSON.stringify({ error: 'ids array required' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const { error: delError } = await supabase.from('music_tasks').delete().in('id', ids);
+      if (delError) throw delError;
+      return new Response(JSON.stringify({ deleted: ids.length }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Parse query params
     const url = new URL(req.url);
-    const period = url.searchParams.get('period') || 'all'; // 7d, 30d, all
+    const period = url.searchParams.get('period') || 'all';
 
     let query = supabase
       .from('music_tasks')
@@ -81,16 +96,14 @@ serve(async (req) => {
     const { data: orders, error } = await query;
     if (error) throw error;
 
-    // Compute metrics
     const total = orders?.length || 0;
     const paid = orders?.filter(o => o.payment_status === 'paid').length || 0;
     const pending = orders?.filter(o => o.payment_status === 'pending').length || 0;
     const expired = orders?.filter(o => o.payment_status === 'expired' || o.payment_status === 'cancelled').length || 0;
     const completed = orders?.filter(o => o.status === 'completed').length || 0;
     const conversionRate = total > 0 ? Math.round((paid / total) * 100) : 0;
-    const estimatedRevenue = paid * 29.90; // preço base
+    const estimatedRevenue = paid * 29.90;
 
-    // Funnel data
     const funnel = [
       { stage: 'Checkout Iniciado', count: total },
       { stage: 'Pagamento Pendente', count: pending + paid + completed },

@@ -4,10 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { RefreshCw, LogOut, ShoppingCart, CheckCircle, XCircle, TrendingUp, DollarSign, Search, FileDown, Play } from "lucide-react";
+import { RefreshCw, LogOut, ShoppingCart, CheckCircle, XCircle, TrendingUp, DollarSign, Search, FileDown, Play, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import OrderDetailModal from "@/components/admin/OrderDetailModal";
 
@@ -90,6 +91,8 @@ export default function AdminDashboard() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -147,6 +150,47 @@ export default function AdminDashboard() {
   const handleLogout = () => {
     sessionStorage.removeItem("admin_token");
     navigate("/admin");
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredOrders.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredOrders.map(o => o.id)));
+    }
+  };
+
+  const handleDelete = async () => {
+    if (selectedIds.size === 0 || !token) return;
+    if (!confirm(`Excluir ${selectedIds.size} pedido(s)? Esta ação não pode ser desfeita.`)) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-dashboard`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ids: Array.from(selectedIds) }),
+      });
+      if (!res.ok) throw new Error("Falha ao excluir");
+      toast({ title: "Excluído", description: `${selectedIds.size} pedido(s) removido(s)` });
+      setSelectedIds(new Set());
+      fetchData();
+    } catch {
+      toast({ title: "Erro", description: "Falha ao excluir pedidos", variant: "destructive" });
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -276,12 +320,23 @@ export default function AdminDashboard() {
             <Button variant="outline" size="sm" onClick={() => exportCSV(filteredOrders)} disabled={filteredOrders.length === 0}>
               <FileDown className="h-4 w-4 mr-1" /> CSV
             </Button>
+            {selectedIds.size > 0 && (
+              <Button variant="destructive" size="sm" onClick={handleDelete} disabled={deleting}>
+                <Trash2 className="h-4 w-4 mr-1" /> Excluir ({selectedIds.size})
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={filteredOrders.length > 0 && selectedIds.size === filteredOrders.length}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </TableHead>
                 <TableHead>Criança</TableHead>
                 <TableHead>Tema</TableHead>
                 <TableHead className="hidden md:table-cell">Estilo</TableHead>
@@ -293,28 +348,34 @@ export default function AdminDashboard() {
             </TableHeader>
             <TableBody>
               {filteredOrders.map((o) => (
-                <TableRow key={o.id} className="cursor-pointer" onClick={() => setSelectedOrder(o)}>
-                  <TableCell className="font-medium">
+                <TableRow key={o.id} className="cursor-pointer">
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      checked={selectedIds.has(o.id)}
+                      onCheckedChange={() => toggleSelect(o.id)}
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium" onClick={() => setSelectedOrder(o)}>
                     <span className="flex items-center gap-1.5">
                       {o.audio_url && <Play className="h-3.5 w-3.5 text-green-500 shrink-0" />}
                       {o.child_name}
                     </span>
                   </TableCell>
-                  <TableCell>{o.theme}</TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground text-xs">{o.music_style || "—"}</TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground text-xs">{o.user_email || "—"}</TableCell>
-                  <TableCell>{statusBadge(o.payment_status)}</TableCell>
-                  <TableCell className="hidden md:table-cell">
+                  <TableCell onClick={() => setSelectedOrder(o)}>{o.theme}</TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground text-xs" onClick={() => setSelectedOrder(o)}>{o.music_style || "—"}</TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground text-xs" onClick={() => setSelectedOrder(o)}>{o.user_email || "—"}</TableCell>
+                  <TableCell onClick={() => setSelectedOrder(o)}>{statusBadge(o.payment_status)}</TableCell>
+                  <TableCell className="hidden md:table-cell" onClick={() => setSelectedOrder(o)}>
                     <Badge variant="secondary" className="text-xs">{o.status}</Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground text-xs">
+                  <TableCell className="text-muted-foreground text-xs" onClick={() => setSelectedOrder(o)}>
                     {new Date(o.created_at).toLocaleDateString("pt-BR")}
                   </TableCell>
                 </TableRow>
               ))}
               {filteredOrders.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                     Nenhum pedido encontrado
                   </TableCell>
                 </TableRow>
