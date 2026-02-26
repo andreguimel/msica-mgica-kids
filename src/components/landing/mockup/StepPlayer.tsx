@@ -35,8 +35,8 @@ export function StepPlayer({
       </div>
 
       {/* Cover image */}
-      <div className="relative rounded-2xl overflow-hidden">
-        <img src={heroImage} alt="Animais tocando música" className="w-full h-auto" />
+      <div className="relative rounded-2xl overflow-hidden h-[120px] sm:h-[140px]">
+        <img src={heroImage} alt="Animais tocando música" className="w-full h-full object-cover" />
         {isPlaying && (
           <>
             <motion.span className="absolute top-3 right-3 text-2xl" animate={{ y: [0, -10, 0], rotate: [0, 15, -15, 0] }} transition={{ duration: 2.5, repeat: Infinity }}>🎵</motion.span>
