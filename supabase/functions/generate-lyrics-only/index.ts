@@ -59,9 +59,9 @@ Regras:
 - O tema deve ser sobre: ${themeDesc}
 
 ESTRUTURA OBRIGATÓRIA (com repetições para facilitar a memorização):
-- Estrofe 1 (4 linhas) → Refrão (4 linhas) → Estrofe 2 (4 linhas) → Refrão (mesmas 4 linhas, repetido igual)
-- O refrão DEVE ser repetido 2 vezes na música (após cada estrofe), com o MESMO texto
-- A duração total deve ser de 1 minuto e 30 segundos a 2 minutos e 30 segundos quando cantada
+- Estrofe 1 (4 linhas) → Refrão (4 linhas) → Estrofe 2 (4 linhas) → Refrão (mesmas 4 linhas) → Estrofe 3 (4 linhas) → Refrão (mesmas 4 linhas)
+- O refrão DEVE ser repetido 3 vezes na música (após cada estrofe), com o MESMO texto exato
+- A duração total deve ser de 2 minutos e 30 segundos a 3 minutos e 30 segundos quando cantada
 
 REPETIÇÕES (muito importante!):
 - O refrão deve ter frases curtas e repetitivas, estilo "canta comigo" (ex: repetir a mesma frase 2x seguidas dentro do refrão)
