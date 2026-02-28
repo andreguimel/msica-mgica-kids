@@ -8,9 +8,9 @@ import { MagicButton } from "@/components/ui/MagicButton";
 import { MagicMockup } from "@/components/landing/mockup/MagicMockup";
 
 const HEADLINES = [
-  "Uma Música Única para o Amor da Sua Vida",
-  "Crie a Música do Seu Filho(a) e Eternize Esse Momento",
-  "Transforme o Nome do Seu Filho(a) em Canção Mágica",
+  "O Nome do Seu Filho em uma Música Cheia de Amor",
+  "Uma Música Única, Educativa e Inesquecível",
+  "A Trilha Sonora da Infância do Seu Filho Começa Aqui",
 ];
 
 export function Hero() {
@@ -56,8 +56,8 @@ export function Hero() {
             </motion.div>
 
             <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl mx-auto lg:mx-0">
-              Música personalizada com o nome da sua criança — letra educativa, melodia alegre, pronta em 1 minuto.
-              <span className="text-primary font-semibold"> Uma surpresa que ela nunca vai esquecer!</span>
+              A IA Música Mágica escreve uma letra linda e educativa com o nome da sua criança, adiciona ritmo, uma banda completa e te entrega uma música pronta por apenas R$9,90.
+              <span className="text-primary font-semibold"> É algo marcante e inesquecível! Aproveite essa oferta por tempo limitado!</span>
             </motion.p>
 
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="flex flex-col sm:flex-row items-center gap-4 mb-6">
