@@ -44,11 +44,10 @@ interface Props {
 
 export default function OrderDetailModal({ order, open, onOpenChange }: Props) {
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [sendingReengagement, setSendingReengagement] = useState(false);
   const { toast } = useToast();
 
   if (!order) return null;
-
-  const [sendingReengagement, setSendingReengagement] = useState(false);
 
   const canSendRecovery = order.user_email && (order.payment_status === "expired" || order.payment_status === "cancelled" || order.payment_status === "pending");
   const canSendReengagement = order.user_email && order.payment_status === "paid" && order.status === "completed";
