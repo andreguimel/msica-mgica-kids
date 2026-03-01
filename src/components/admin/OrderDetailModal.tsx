@@ -48,7 +48,10 @@ export default function OrderDetailModal({ order, open, onOpenChange }: Props) {
 
   if (!order) return null;
 
+  const [sendingReengagement, setSendingReengagement] = useState(false);
+
   const canSendRecovery = order.user_email && (order.payment_status === "expired" || order.payment_status === "cancelled" || order.payment_status === "pending");
+  const canSendReengagement = order.user_email && order.payment_status === "paid" && order.status === "completed";
 
   const handleSendRecoveryEmail = async () => {
     if (!order.user_email) return;
@@ -71,6 +74,30 @@ export default function OrderDetailModal({ order, open, onOpenChange }: Props) {
       toast({ title: "Erro", description: e.message || "Falha ao enviar email", variant: "destructive" });
     } finally {
       setSendingEmail(false);
+    }
+  };
+
+  const handleSendReengagementEmail = async () => {
+    if (!order.user_email) return;
+    setSendingReengagement(true);
+    try {
+      const token = sessionStorage.getItem("admin_token");
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/send-reengagement-email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ email: order.user_email, childName: order.child_name }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erro ao enviar");
+      toast({ title: "✅ Email enviado!", description: `Email de reengajamento enviado para ${order.user_email}` });
+    } catch (e: any) {
+      toast({ title: "Erro", description: e.message || "Falha ao enviar email", variant: "destructive" });
+    } finally {
+      setSendingReengagement(false);
     }
   };
 
@@ -138,6 +165,19 @@ export default function OrderDetailModal({ order, open, onOpenChange }: Props) {
           >
             <Send className="h-4 w-4 mr-2" />
             {sendingEmail ? "Enviando..." : "Enviar Email de Recuperação"}
+          </Button>
+        )}
+
+        {/* Reengagement Email Button */}
+        {canSendReengagement && (
+          <Button
+            size="sm"
+            onClick={handleSendReengagementEmail}
+            disabled={sendingReengagement}
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+          >
+            <Send className="h-4 w-4 mr-2" />
+            {sendingReengagement ? "Enviando..." : "Enviar Email de Reengajamento (50% OFF)"}
           </Button>
         )}
 
