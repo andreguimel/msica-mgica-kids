@@ -59,6 +59,7 @@ function getExitCoupon(): string | null {
 }
 
 const RECOVERY_COUPON = "RESGATE50";
+const REENGAGEMENT_COUPON = "VOLTEI50";
 const RECOVERY_DISCOUNT_PERCENT = 50;
 
 function applyDiscount(priceStr: string, discountPct: number): string {
@@ -149,7 +150,7 @@ export default function Payment() {
   const urlCoupon = searchParams.get("coupon")?.toUpperCase() || null;
   const appliedCoupon = urlCoupon || getExitCoupon();
   const hasDiscount = appliedCoupon === VALID_COUPON;
-  const hasRecoveryDiscount = appliedCoupon === RECOVERY_COUPON;
+  const hasRecoveryDiscount = appliedCoupon === RECOVERY_COUPON || appliedCoupon === REENGAGEMENT_COUPON;
   // Use state so displayPrice stays stable even after localStorage.removeItem("exitCoupon")
   const [displayPrice] = useState(() => {
     if (hasRecoveryDiscount) return applyDiscount(plan.price, RECOVERY_DISCOUNT_PERCENT);
