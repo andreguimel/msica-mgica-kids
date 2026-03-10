@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, ExternalLink, Music, Mail, Calendar, User, Palette, Clock, Send } from "lucide-react";
+import { Download, ExternalLink, Music, Mail, Calendar, User, Palette, Clock, Send, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -40,17 +40,20 @@ interface Props {
   order: Order | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onRetrySuccess?: () => void;
 }
 
-export default function OrderDetailModal({ order, open, onOpenChange }: Props) {
+export default function OrderDetailModal({ order, open, onOpenChange, onRetrySuccess }: Props) {
   const [sendingEmail, setSendingEmail] = useState(false);
   const [sendingReengagement, setSendingReengagement] = useState(false);
+  const [retrying, setRetrying] = useState(false);
   const { toast } = useToast();
 
   if (!order) return null;
 
   const canSendRecovery = order.user_email && (order.payment_status === "expired" || order.payment_status === "cancelled" || order.payment_status === "pending");
   const canSendReengagement = order.user_email && order.payment_status === "paid" && order.status === "completed";
+  const canRetry = order.payment_status === "paid" && (order.status === "failed" || order.status === "processing");
 
   const handleSendRecoveryEmail = async () => {
     if (!order.user_email) return;
@@ -97,6 +100,32 @@ export default function OrderDetailModal({ order, open, onOpenChange }: Props) {
       toast({ title: "Erro", description: e.message || "Falha ao enviar email", variant: "destructive" });
     } finally {
       setSendingReengagement(false);
+    }
+  };
+
+  const handleRetryGeneration = async () => {
+    if (!order) return;
+    setRetrying(true);
+    try {
+      const adminSecret = prompt("Insira o ADMIN_SECRET para re-gerar:");
+      if (!adminSecret) { setRetrying(false); return; }
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/start-music-after-payment`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+        },
+        body: JSON.stringify({ taskId: order.id, adminSecret }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erro ao re-gerar");
+      toast({ title: "✅ Geração reiniciada!", description: "A música está sendo gerada novamente." });
+      onRetrySuccess?.();
+    } catch (e: any) {
+      toast({ title: "Erro", description: e.message || "Falha ao re-gerar música", variant: "destructive" });
+    } finally {
+      setRetrying(false);
     }
   };
 
@@ -177,6 +206,19 @@ export default function OrderDetailModal({ order, open, onOpenChange }: Props) {
           >
             <Send className="h-4 w-4 mr-2" />
             {sendingReengagement ? "Enviando..." : "Enviar Email de Reengajamento (50% OFF)"}
+          </Button>
+        )}
+
+        {/* Retry Generation Button */}
+        {canRetry && (
+          <Button
+            size="sm"
+            onClick={handleRetryGeneration}
+            disabled={retrying}
+            className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+          >
+            <RotateCcw className={`h-4 w-4 mr-2 ${retrying ? "animate-spin" : ""}`} />
+            {retrying ? "Re-gerando..." : "🔄 Re-gerar Música"}
           </Button>
         )}
 
