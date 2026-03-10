@@ -234,6 +234,7 @@ export default function AdminDashboard() {
       toast({ title: "Link criado!" });
       setNewLinkCode("");
       setNewLinkLabel("");
+      setNewLinkPassword("");
       fetchData();
     } catch {
       toast({ title: "Erro", description: "Falha ao criar link", variant: "destructive" });
