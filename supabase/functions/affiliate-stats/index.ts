@@ -77,7 +77,7 @@ serve(async (req) => {
     const total = orders?.length || 0;
     const paid = orders?.filter(o => o.payment_status === 'paid').length || 0;
     const conversionRate = total > 0 ? Math.round((paid / total) * 100) : 0;
-    const revenue = paid * 29.90;
+    const revenue = paid * 9.90;
     const commissionDue = revenue * (link.commission_percent / 100);
     const balance = commissionDue - link.commission_paid;
 
