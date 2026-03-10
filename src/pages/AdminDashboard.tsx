@@ -57,6 +57,7 @@ interface TrackingLink {
   created_at: string;
   commission_percent: number;
   commission_paid: number;
+  password_hash: string | null;
 }
 
 interface RefMetrics {
