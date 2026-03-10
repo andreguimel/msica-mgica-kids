@@ -2,9 +2,9 @@ import { useState, useRef } from "react";
 import { Play, Pause, Music } from "lucide-react";
 
 const examples = [
-  { name: "Pedro", emoji: "⚽", theme: "Futebol", url: "/audio/demo-pedro.mp3", color: "bg-primary" },
-  { name: "Isabela", emoji: "👑", theme: "Princesa", url: "/audio/demo-isabela-real.mp3", color: "bg-secondary" },
-  { name: "Amanda", emoji: "👑", theme: "Princesa", url: "/audio/demo-amanda-real.mp3", color: "bg-accent" },
+  { name: "Pedro", prefix: "do", emoji: "⚽", theme: "Futebol", url: "/audio/demo-pedro.mp3", color: "bg-primary" },
+  { name: "Isabela", prefix: "da", emoji: "👑", theme: "Princesa", url: "/audio/demo-isabela-real.mp3", color: "bg-secondary" },
+  { name: "Amanda", prefix: "da", emoji: "👑", theme: "Princesa", url: "/audio/demo-amanda-real.mp3", color: "bg-accent" },
 ];
 
 export function RealExamples() {
@@ -70,7 +70,7 @@ export function RealExamples() {
                 </div>
 
                 <h3 className="font-baloo font-bold text-lg mb-0.5">
-                  Música do {ex.name}
+                  Música {ex.prefix} {ex.name}
                 </h3>
                 <p className="text-xs text-muted-foreground mb-4">
                   <Music className="w-3 h-3 inline mr-1" />{ex.theme}
