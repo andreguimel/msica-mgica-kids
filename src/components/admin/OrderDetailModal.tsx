@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, ExternalLink, Music, Mail, Calendar, User, Palette, Clock, Send } from "lucide-react";
+import { Download, ExternalLink, Music, Mail, Calendar, User, Palette, Clock, Send, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
