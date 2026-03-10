@@ -110,6 +110,7 @@ export default function AdminDashboard() {
   const [newLinkCode, setNewLinkCode] = useState("");
   const [newLinkLabel, setNewLinkLabel] = useState("");
   const [newLinkPassword, setNewLinkPassword] = useState("");
+  const [newLinkCommission, setNewLinkCommission] = useState("50");
   const [creatingLink, setCreatingLink] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -224,7 +225,7 @@ export default function AdminDashboard() {
           apikey: SUPABASE_KEY,
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ action: "create_tracking_link", code: newLinkCode.trim(), label: newLinkLabel.trim(), password: newLinkPassword.trim() || undefined }),
+        body: JSON.stringify({ action: "create_tracking_link", code: newLinkCode.trim(), label: newLinkLabel.trim(), password: newLinkPassword.trim() || undefined, commission_percent: Number(newLinkCommission) || 50 }),
       });
       if (res.status === 409) {
         toast({ title: "Erro", description: "Código já existe", variant: "destructive" });
@@ -235,6 +236,7 @@ export default function AdminDashboard() {
       setNewLinkCode("");
       setNewLinkLabel("");
       setNewLinkPassword("");
+      setNewLinkCommission("50");
       fetchData();
     } catch {
       toast({ title: "Erro", description: "Falha ao criar link", variant: "destructive" });
@@ -548,6 +550,18 @@ export default function AdminDashboard() {
                     value={newLinkPassword}
                     onChange={(e) => setNewLinkPassword(e.target.value)}
                     className="w-[180px]"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm text-muted-foreground">Comissão (%)</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    placeholder="50"
+                    value={newLinkCommission}
+                    onChange={(e) => setNewLinkCommission(e.target.value)}
+                    className="w-[100px]"
                   />
                 </div>
                 <Button onClick={handleCreateLink} disabled={creatingLink || !newLinkCode.trim() || !newLinkLabel.trim()}>
