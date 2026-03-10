@@ -204,7 +204,7 @@ serve(async (req) => {
         refMetrics[o.ref_code].total++;
         if (o.payment_status === 'paid') {
           refMetrics[o.ref_code].paid++;
-          refMetrics[o.ref_code].revenue += 29.90;
+          refMetrics[o.ref_code].revenue += 9.90;
         }
       }
     }
