@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
 const SESSION_KEY = "urgencyBannerExpiry";
-const DURATION_MS = 15 * 60 * 1000; // 15 minutes
+const DURATION_MS = 15 * 60 * 1000;
 
 function getOrInitExpiry(): number {
   const stored = sessionStorage.getItem(SESSION_KEY);
@@ -23,10 +22,7 @@ export function UrgencyBanner() {
 
   useEffect(() => {
     const expiry = getOrInitExpiry();
-    const tick = () => {
-      const remaining = Math.max(0, expiry - Date.now());
-      setTimeLeft(remaining);
-    };
+    const tick = () => setTimeLeft(Math.max(0, expiry - Date.now()));
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
@@ -37,22 +33,13 @@ export function UrgencyBanner() {
   const formatted = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 
   const handleCouponClick = async () => {
-    try {
-      await navigator.clipboard.writeText("MAGICA10");
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
+    try { await navigator.clipboard.writeText("MAGICA10"); } catch {}
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="fixed top-0 left-0 right-0 z-[60] bg-primary text-primary-foreground"
-    >
+    <div className="fixed top-0 left-0 right-0 z-[60] bg-primary text-primary-foreground animate-[slideDown_0.3s_ease-out]">
       <div className="container mx-auto px-4 h-9 flex items-center justify-center gap-3 text-sm font-medium">
         <span className="hidden sm:inline">⏰ Oferta especial:</span>
         <button
@@ -76,6 +63,6 @@ export function UrgencyBanner() {
           Usar agora →
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }
