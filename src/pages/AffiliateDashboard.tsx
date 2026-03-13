@@ -259,9 +259,9 @@ export default function AffiliateDashboard() {
                               <TableCell className="text-muted-foreground text-xs">
                                 {new Date(o.created_at).toLocaleDateString("pt-BR")}
                               </TableCell>
-                              <TableCell>R$ 9,90</TableCell>
+                              <TableCell>R$ {(o.price_paid || 9.90).toFixed(2).replace('.', ',')}</TableCell>
                               <TableCell className="text-primary font-semibold">
-                                R$ {(9.90 * data.commissionPercent / 100).toFixed(2)}
+                                R$ {((o.price_paid || 9.90) * data.commissionPercent / 100).toFixed(2)}
                               </TableCell>
                             </TableRow>
                           ))}
