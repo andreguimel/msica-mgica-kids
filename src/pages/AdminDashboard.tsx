@@ -48,6 +48,7 @@ interface Order {
   access_code: string | null;
   download_expires_at: string | null;
   ref_code: string | null;
+  price_paid: number | null;
 }
 
 interface TrackingLink {
@@ -95,20 +96,22 @@ function exportCSV(orders: Order[]) {
 }
 
 function exportAffiliateWeeklyCSV(orders: Order[], link: TrackingLink) {
-  // Filter paid orders for this affiliate in the last 7 days
   const now = new Date();
   const weekAgo = new Date(now);
   weekAgo.setDate(weekAgo.getDate() - 7);
   const weekOrders = orders.filter(o => o.ref_code === link.code && o.payment_status === 'paid' && new Date(o.created_at) >= weekAgo);
-  const commission = 9.90 * (link.commission_percent / 100);
   const headers = ["Nome da Criança", "Tema", "Estilo", "Email", "Data", "Valor Venda", "Comissão"];
-  const rows = weekOrders.map(o => [
-    o.child_name, o.theme, o.music_style || "", o.user_email || "",
-    new Date(o.created_at).toLocaleDateString("pt-BR"),
-    "9.90", commission.toFixed(2),
-  ]);
-  const totalRevenue = weekOrders.length * 9.90;
-  const totalCommission = weekOrders.length * commission;
+  const rows = weekOrders.map(o => {
+    const price = o.price_paid || 9.90;
+    const commission = price * (link.commission_percent / 100);
+    return [
+      o.child_name, o.theme, o.music_style || "", o.user_email || "",
+      new Date(o.created_at).toLocaleDateString("pt-BR"),
+      price.toFixed(2), commission.toFixed(2),
+    ];
+  });
+  const totalRevenue = weekOrders.reduce((sum, o) => sum + (o.price_paid || 9.90), 0);
+  const totalCommission = totalRevenue * (link.commission_percent / 100);
   rows.push(["TOTAL", "", "", "", "", totalRevenue.toFixed(2), totalCommission.toFixed(2)]);
   const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(",")).join("\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
