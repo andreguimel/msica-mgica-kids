@@ -259,17 +259,23 @@ export default function AffiliateDashboard() {
                             <TableHead>Criança</TableHead>
                             <TableHead>Tema</TableHead>
                             <TableHead>Estilo</TableHead>
+                            <TableHead>Tipo</TableHead>
                             <TableHead>Data</TableHead>
                             <TableHead>Valor</TableHead>
                             <TableHead>Comissão</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {week.orders.map((o) => (
+                          {week.orders.map((o) => {
+                            const saleType = getSaleType(o.price_paid);
+                            return (
                             <TableRow key={o.id}>
                               <TableCell className="font-medium">{o.child_name}</TableCell>
                               <TableCell>{o.theme}</TableCell>
                               <TableCell className="text-muted-foreground text-xs">{o.music_style || "—"}</TableCell>
+                              <TableCell>
+                                <Badge variant={getSaleTypeBadgeVariant(saleType)}>{saleType}</Badge>
+                              </TableCell>
                               <TableCell className="text-muted-foreground text-xs">
                                 {new Date(o.created_at).toLocaleDateString("pt-BR")}
                               </TableCell>
