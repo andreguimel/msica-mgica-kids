@@ -30,7 +30,7 @@ verify_jwt = false
 [functions.create-billing]
 verify_jwt = false
 
-[functions.abacatepay-webhook]
+[functions.mercadopago-webhook]
 verify_jwt = false
 
 [functions.admin-login]

@@ -24,17 +24,16 @@ serve(async (req) => {
   try {
     const { taskId, origin } = await req.json();
 
-    const ABACATEPAY_API_KEY = Deno.env.get("ABACATEPAY_API_KEY");
+    const MERCADOPAGO_ACCESS_TOKEN = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    if (!ABACATEPAY_API_KEY) throw new Error("ABACATEPAY_API_KEY not configured");
+    if (!MERCADOPAGO_ACCESS_TOKEN) throw new Error("MERCADOPAGO_ACCESS_TOKEN not configured");
     if (!SUPABASE_URL) throw new Error("SUPABASE_URL not configured");
     if (!SUPABASE_SERVICE_ROLE_KEY) throw new Error("SUPABASE_SERVICE_ROLE_KEY not configured");
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Fetch the original task to get user email
     const { data: task, error: fetchError } = await supabase
       .from("music_tasks")
       .select("*")
@@ -48,7 +47,7 @@ serve(async (req) => {
       );
     }
 
-    // Create a placeholder "upsell" task to track this payment
+    // Create upsell placeholder task
     const { data: upsellTask, error: upsellError } = await supabase
       .from("music_tasks")
       .insert({
@@ -70,66 +69,66 @@ serve(async (req) => {
     }
 
     const customerEmail = task.user_email || `customer-${taskId.substring(0, 8)}@musicamagica.com`;
-
-    const priceInCents = 1500;
+    const transactionAmount = 15.00;
     const productName = "Upgrade Pacote Encantado - +2 músicas";
 
-    // Create PIX QR Code directly
-    const pixBody = {
-      amount: priceInCents,
-      expiresIn: 900,
-      description: productName,
-      customer: {
-        name: task.child_name,
+    // Create Mercado Pago Pix payment
+    const mpBody = {
+      transaction_amount: transactionAmount,
+      payment_method_id: "pix",
+      payer: {
         email: customerEmail,
-        cellphone: "11999999999",
-        taxId: "52998224725",
+        first_name: task.child_name,
+        identification: {
+          type: "CPF",
+          number: "00000000000",
+        },
       },
-      metadata: {
-        externalId: upsellTask.id,
-      },
+      description: productName,
+      external_reference: upsellTask.id,
     };
 
-    console.log("Creating upsell PIX QR Code:", JSON.stringify(pixBody));
+    console.log("Creating upsell MercadoPago Pix payment:", JSON.stringify(mpBody));
 
-    const pixResponse = await fetch("https://api.abacatepay.com/v1/pixQrCode/create", {
+    const mpResponse = await fetch("https://api.mercadopago.com/v1/payments", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${ABACATEPAY_API_KEY}`,
+        Authorization: `Bearer ${MERCADOPAGO_ACCESS_TOKEN}`,
+        "X-Idempotency-Key": `upsell-${upsellTask.id}-${Date.now()}`,
       },
-      body: JSON.stringify(pixBody),
+      body: JSON.stringify(mpBody),
     });
 
-    const pixText = await pixResponse.text();
-    console.log("AbacatePay upsell PIX response:", pixText);
+    const mpText = await mpResponse.text();
+    console.log("MercadoPago upsell response:", mpText);
 
-    let pixData;
+    let mpData;
     try {
-      pixData = JSON.parse(pixText);
+      mpData = JSON.parse(mpText);
     } catch {
-      throw new Error(`AbacatePay returned non-JSON: ${pixText.substring(0, 200)}`);
+      throw new Error(`MercadoPago returned non-JSON: ${mpText.substring(0, 200)}`);
     }
 
-    if (!pixResponse.ok) {
-      throw new Error(`AbacatePay error (${pixResponse.status}): ${pixText.substring(0, 300)}`);
+    if (!mpResponse.ok) {
+      throw new Error(`MercadoPago error (${mpResponse.status}): ${mpText.substring(0, 300)}`);
     }
 
-    const pixId = pixData.data?.id || pixData.id;
-    const brCode = pixData.data?.brCode || pixData.brCode;
-    const brCodeBase64 = pixData.data?.brCodeBase64 || pixData.brCodeBase64;
+    const paymentId = mpData.id;
+    const brCode = mpData.point_of_interaction?.transaction_data?.qr_code || null;
+    const brCodeBase64 = mpData.point_of_interaction?.transaction_data?.qr_code_base64 || null;
 
-    // Update the upsell task with pix info
+    // Update upsell task with payment info
     await supabase
       .from("music_tasks")
       .update({
-        billing_id: pixId || null,
+        billing_id: String(paymentId),
         payment_url: brCode || null,
       })
       .eq("id", upsellTask.id);
 
     return new Response(
-      JSON.stringify({ billingId: pixId, brCode, brCodeBase64, upsellTaskId: upsellTask.id }),
+      JSON.stringify({ billingId: String(paymentId), brCode, brCodeBase64, upsellTaskId: upsellTask.id }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
