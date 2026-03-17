@@ -44,7 +44,7 @@ serve(async (req) => {
   }
 
   try {
-    const { taskId, plan, origin, customerName, customerEmail: reqEmail, customerCpf, discountPercent, refCode } = await req.json();
+    const { taskId, plan, origin, customerName, customerEmail: reqEmail, customerCpf, discountPercent, refCode, deviceId } = await req.json();
 
     const MERCADOPAGO_ACCESS_TOKEN = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
