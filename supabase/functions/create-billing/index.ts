@@ -34,7 +34,6 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Origin validation
   const originHeader = req.headers.get("origin") || "";
   const allowedOrigins = ["lovable.app", "lovableproject.com", "localhost", "musicamagica.com", "vercel.app", "musicamagica.com.br"];
   if (!allowedOrigins.some((o) => originHeader.includes(o))) {
@@ -47,18 +46,17 @@ serve(async (req) => {
   try {
     const { taskId, plan, origin, customerName, customerEmail: reqEmail, customerCpf, discountPercent, refCode } = await req.json();
 
-    const ABACATEPAY_API_KEY = Deno.env.get("ABACATEPAY_API_KEY");
+    const MERCADOPAGO_ACCESS_TOKEN = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
 
-    if (!ABACATEPAY_API_KEY) throw new Error("ABACATEPAY_API_KEY not configured");
+    if (!MERCADOPAGO_ACCESS_TOKEN) throw new Error("MERCADOPAGO_ACCESS_TOKEN not configured");
     if (!SUPABASE_URL) throw new Error("SUPABASE_URL not configured");
     if (!SUPABASE_SERVICE_ROLE_KEY) throw new Error("SUPABASE_SERVICE_ROLE_KEY not configured");
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Fetch the task
     const { data: task, error: fetchError } = await supabase
       .from("music_tasks")
       .select("*")
@@ -72,11 +70,12 @@ serve(async (req) => {
       );
     }
 
-    // Determine price in cents, applying discount if provided
+    // Determine price, applying discount if provided
     let priceInCents = plan === "pacote" ? 2490 : 990;
     if (discountPercent && typeof discountPercent === "number" && discountPercent > 0 && discountPercent <= 50) {
       priceInCents = Math.round(priceInCents * (1 - discountPercent / 100));
     }
+    const transactionAmount = priceInCents / 100;
     const productName = plan === "pacote"
       ? `Pacote Encantado - 3 músicas personalizadas`
       : `Música Mágica para ${task.child_name}`;
@@ -91,60 +90,63 @@ serve(async (req) => {
       await supabase.from("music_tasks").update(updateFields).eq("id", taskId);
     }
 
-    // Create PIX QR Code directly (real PIX, not a billing link)
-    console.log("Creating PIX QR Code...");
-    const pixBody = {
-      amount: priceInCents,
-      expiresIn: 900, // 15 minutes
-      description: productName,
-      customer: {
-        name: customerName || task.child_name,
+    // Create Mercado Pago Pix payment
+    const cpfDigits = (customerCpf || "").replace(/\D/g, "") || "00000000000";
+    const mpBody = {
+      transaction_amount: transactionAmount,
+      payment_method_id: "pix",
+      payer: {
         email: customerEmail,
-        cellphone: "11999999999",
-        taxId: customerCpf || "52998224725",
+        first_name: customerName || task.child_name,
+        identification: {
+          type: "CPF",
+          number: cpfDigits,
+        },
       },
-      metadata: {
-        externalId: taskId,
-      },
+      description: productName,
+      external_reference: taskId,
     };
 
-    const pixResponse = await fetch("https://api.abacatepay.com/v1/pixQrCode/create", {
+    console.log("Creating MercadoPago Pix payment:", JSON.stringify(mpBody));
+
+    const mpResponse = await fetch("https://api.mercadopago.com/v1/payments", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${ABACATEPAY_API_KEY}`,
+        Authorization: `Bearer ${MERCADOPAGO_ACCESS_TOKEN}`,
+        "X-Idempotency-Key": `billing-${taskId}-${Date.now()}`,
       },
-      body: JSON.stringify(pixBody),
+      body: JSON.stringify(mpBody),
     });
 
-    const pixText = await pixResponse.text();
-    console.log("AbacatePay PIX response:", pixText);
+    const mpText = await mpResponse.text();
+    console.log("MercadoPago response:", mpText);
 
-    let pixData;
+    let mpData;
     try {
-      pixData = JSON.parse(pixText);
+      mpData = JSON.parse(mpText);
     } catch {
-      throw new Error(`AbacatePay returned non-JSON: ${pixText.substring(0, 200)}`);
+      throw new Error(`MercadoPago returned non-JSON: ${mpText.substring(0, 200)}`);
     }
 
-    if (!pixResponse.ok) {
-      throw new Error(`AbacatePay PIX error (${pixResponse.status}): ${pixText.substring(0, 300)}`);
+    if (!mpResponse.ok) {
+      throw new Error(`MercadoPago error (${mpResponse.status}): ${mpText.substring(0, 300)}`);
     }
 
-    const pixId = pixData.data?.id || pixData.id;
-    const brCode = pixData.data?.brCode || pixData.brCode;
-    const brCodeBase64 = pixData.data?.brCodeBase64 || pixData.brCodeBase64;
+    const paymentId = mpData.id;
+    const brCode = mpData.point_of_interaction?.transaction_data?.qr_code || null;
+    const brCodeBase64 = mpData.point_of_interaction?.transaction_data?.qr_code_base64 || null;
 
-    console.log("Extracted pixId:", pixId);
+    console.log("Extracted paymentId:", paymentId, "brCode length:", brCode?.length);
 
-    // Update task with pix info (store pix ID in billing_id for webhook tracking)
+    // Update task with payment info
     const { error: updateError } = await supabase
       .from("music_tasks")
       .update({
-        billing_id: pixId || null,
+        billing_id: String(paymentId),
         payment_url: brCode || null,
         payment_status: "pending",
-        price_paid: priceInCents / 100,
+        price_paid: transactionAmount,
       })
       .eq("id", taskId);
 
@@ -154,7 +156,7 @@ serve(async (req) => {
 
     // Send admin notification email (fire-and-forget)
     if (BREVO_API_KEY) {
-      const priceFormatted = (priceInCents / 100).toFixed(2).replace(".", ",");
+      const priceFormatted = transactionAmount.toFixed(2).replace(".", ",");
       const planLabel = plan === "pacote" ? "Pacote Encantado (3 músicas)" : "Música Avulsa";
       const adminHtml = `
 <!DOCTYPE html>
@@ -188,7 +190,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ billingId: pixId, brCode, brCodeBase64 }),
+      JSON.stringify({ billingId: String(paymentId), brCode, brCodeBase64 }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {

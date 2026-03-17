@@ -36,83 +36,139 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    console.log("AbacatePay webhook received:", JSON.stringify(body));
+    console.log("MercadoPago webhook received:", JSON.stringify(body));
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const MERCADOPAGO_ACCESS_TOKEN = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
     const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
 
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       throw new Error("Missing Supabase config");
     }
+    if (!MERCADOPAGO_ACCESS_TOKEN) {
+      throw new Error("Missing MERCADOPAGO_ACCESS_TOKEN");
+    }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Handle both billing and pixQrCode webhook payloads
-    const billing = body.data?.billing || body.data?.pixQrCode || body.data || body;
-    const billingId = billing.id || billing.billingId;
-    const status = billing.status;
+    // MercadoPago sends { action: "payment.updated", data: { id: "123456" } }
+    const action = body.action || body.type;
+    const paymentId = body.data?.id;
 
-    if (!billingId) {
-      console.log("No billingId/pixId found in webhook payload");
+    if (!paymentId) {
+      console.log("No payment ID in webhook payload");
       return new Response(JSON.stringify({ ok: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log(`Processing webhook for ${billingId}, status: ${status}`);
+    // Only process payment events
+    if (action && !action.includes("payment")) {
+      console.log(`Ignoring non-payment action: ${action}`);
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    // Find the task by billing_id (which stores either billing ID or pix ID)
+    // Fetch payment details from MercadoPago API to confirm status
+    const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+      headers: { Authorization: `Bearer ${MERCADOPAGO_ACCESS_TOKEN}` },
+    });
+
+    if (!mpResponse.ok) {
+      console.error(`MercadoPago API error: ${mpResponse.status}`);
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const payment = await mpResponse.json();
+    const status = payment.status; // approved, pending, cancelled, rejected, expired, etc.
+    const taskId = payment.external_reference;
+
+    console.log(`Payment ${paymentId} status: ${status}, taskId: ${taskId}`);
+
+    if (!taskId) {
+      console.log("No external_reference (taskId) in payment");
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Find the task
     const { data: task, error: fetchError } = await supabase
       .from("music_tasks")
       .select("*")
-      .eq("billing_id", billingId)
+      .eq("id", taskId)
       .single();
 
     if (fetchError || !task) {
-      console.log(`No task found for billing_id ${billingId}`);
-      return new Response(JSON.stringify({ ok: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      // Try by billing_id as fallback
+      const { data: taskByBilling } = await supabase
+        .from("music_tasks")
+        .select("*")
+        .eq("billing_id", String(paymentId))
+        .single();
+
+      if (!taskByBilling) {
+        console.log(`No task found for taskId ${taskId} or billing_id ${paymentId}`);
+        return new Response(JSON.stringify({ ok: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      // Use the task found by billing_id
+      return await processPayment(supabase, taskByBilling, status, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, BREVO_API_KEY);
     }
 
-    // Check if payment is confirmed
-    const isPaid = status === "PAID" || status === "COMPLETED" || status === "completed" || status === "RECEIVED";
-    const isExpired = status === "EXPIRED" || status === "CANCELLED" || status === "expired" || status === "cancelled";
+    return await processPayment(supabase, task, status, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, BREVO_API_KEY);
+  } catch (e) {
+    console.error("Webhook error:", e);
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});
 
-    if (isPaid && task.payment_status !== "paid") {
-      console.log(`Payment confirmed for task ${task.id}, starting music generation...`);
+async function processPayment(
+  supabase: any,
+  task: any,
+  status: string,
+  SUPABASE_URL: string,
+  SUPABASE_SERVICE_ROLE_KEY: string,
+  BREVO_API_KEY: string | undefined
+) {
+  const isPaid = status === "approved";
+  const isExpired = status === "cancelled" || status === "rejected" || status === "expired";
 
-      // Check if this is an upsell placeholder (should NOT trigger music generation)
-      const isUpsell = task.lyrics === "__UPSELL__";
+  if (isPaid && task.payment_status !== "paid") {
+    console.log(`Payment confirmed for task ${task.id}, starting music generation...`);
 
-      // Update payment status
-      await supabase
-        .from("music_tasks")
-        .update({ payment_status: "paid", ...(isUpsell ? { status: "completed" } : {}) })
-        .eq("id", task.id);
+    const isUpsell = task.lyrics === "__UPSELL__";
 
-      if (!isUpsell) {
-        // Trigger music generation only for real tasks
-        const startResponse = await fetch(`${SUPABASE_URL}/functions/v1/start-music-after-payment`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-          },
-          body: JSON.stringify({ taskId: task.id }),
-        });
+    await supabase
+      .from("music_tasks")
+      .update({ payment_status: "paid", ...(isUpsell ? { status: "completed" } : {}) })
+      .eq("id", task.id);
 
-        const startResult = await startResponse.json();
-        console.log("Start music result:", JSON.stringify(startResult));
-      } else {
-        console.log("Upsell task - skipping music generation");
-      }
+    if (!isUpsell) {
+      const startResponse = await fetch(`${SUPABASE_URL}/functions/v1/start-music-after-payment`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        },
+        body: JSON.stringify({ taskId: task.id }),
+      });
+      const startResult = await startResponse.json();
+      console.log("Start music result:", JSON.stringify(startResult));
+    } else {
+      console.log("Upsell task - skipping music generation");
+    }
 
-      // Send admin "Venda Confirmada" email
-      if (BREVO_API_KEY) {
-        const planLabel = task.theme ? `Tema: ${task.theme}` : "";
-        const adminHtml = `
+    if (BREVO_API_KEY) {
+      const adminHtml = `
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><style>
@@ -130,29 +186,27 @@ serve(async (req) => {
   <div class="badge">✅ Venda Confirmada!</div>
   <h2>💰 Pagamento recebido!</h2>
   <div class="row"><span class="label">👶 Criança</span><span class="value">${task.child_name}</span></div>
-  ${planLabel ? `<div class="row"><span class="label">🎨 Tema</span><span class="value">${task.theme}</span></div>` : ""}
+  <div class="row"><span class="label">🎨 Tema</span><span class="value">${task.theme}</span></div>
   <div class="row"><span class="label">📧 E-mail cliente</span><span class="value">${task.user_email || "(não informado)"}</span></div>
   <div class="row"><span class="label">🪪 ID do pedido</span><span class="value">${task.id.substring(0, 8)}...</span></div>
   <div class="row"><span class="label">📦 Tipo</span><span class="value">${isUpsell ? "Upsell" : "Pedido principal"}</span></div>
   <div class="price">🎉 Venda confirmada!</div>
 </div></div></body></html>`;
 
-        sendBrevoEmail(BREVO_API_KEY, "andreguimel@gmail.com", "✅ Venda Confirmada — Música Mágica", adminHtml)
-          .catch((e) => console.error("Failed to send sale email:", e));
-      }
+      sendBrevoEmail(BREVO_API_KEY, "andreguimel@gmail.com", "✅ Venda Confirmada — Música Mágica", adminHtml)
+        .catch((e: any) => console.error("Failed to send sale email:", e));
+    }
 
-    } else if (isExpired && task.payment_status !== "paid") {
-      console.log(`Payment expired/cancelled for task ${task.id}`);
+  } else if (isExpired && task.payment_status !== "paid") {
+    console.log(`Payment expired/cancelled for task ${task.id}`);
 
-      // Update payment status
-      await supabase
-        .from("music_tasks")
-        .update({ payment_status: status?.toLowerCase() || "expired" })
-        .eq("id", task.id);
+    await supabase
+      .from("music_tasks")
+      .update({ payment_status: status })
+      .eq("id", task.id);
 
-      if (BREVO_API_KEY) {
-        // Admin abandonment email
-        const adminAbandonHtml = `
+    if (BREVO_API_KEY) {
+      const adminAbandonHtml = `
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><style>
@@ -176,19 +230,18 @@ serve(async (req) => {
   <div class="note">📨 Um e-mail de recuperação com 50% de desconto foi enviado automaticamente para o cliente (se tiver e-mail cadastrado).</div>
 </div></div></body></html>`;
 
-        const adminEmailPromise = sendBrevoEmail(
-          BREVO_API_KEY,
-          "andreguimel@gmail.com",
-          "⚠️ Abandono de Carrinho — Música Mágica",
-          adminAbandonHtml
-        ).catch((e) => console.error("Failed to send abandonment admin email:", e));
+      const adminEmailPromise = sendBrevoEmail(
+        BREVO_API_KEY,
+        "andreguimel@gmail.com",
+        "⚠️ Abandono de Carrinho — Música Mágica",
+        adminAbandonHtml
+      ).catch((e: any) => console.error("Failed to send abandonment admin email:", e));
 
-        // Client recovery email (only if we have an email)
-        const clientEmail = task.user_email;
-        let clientEmailPromise = Promise.resolve();
-        if (clientEmail && clientEmail !== "(não informado)" && !clientEmail.includes("@musicamagica.com")) {
-          const recoveryLink = `https://musicamagica.com.br/criar?coupon=RESGATE50`;
-          const clientRecoveryHtml = `
+      const clientEmail = task.user_email;
+      let clientEmailPromise = Promise.resolve();
+      if (clientEmail && clientEmail !== "(não informado)" && !clientEmail.includes("@musicamagica.com")) {
+        const recoveryLink = `https://musicamagica.com.br/criar?coupon=RESGATE50`;
+        const clientRecoveryHtml = `
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><style>
@@ -214,13 +267,11 @@ serve(async (req) => {
         Você quase criou a música personalizada de <strong>${task.child_name}</strong>.<br>
         Por isso, estamos oferecendo um desconto especial só para você!
       </p>
-      
       <div class="coupon-box">
         <p class="coupon-label">Seu cupom exclusivo:</p>
         <p class="coupon-code">RESGATE50</p>
         <p class="discount">✨ 50% de desconto por 24 horas</p>
       </div>
-      
       <a href="${recoveryLink}" class="btn">🎁 Resgatar meu desconto →</a>
       <p class="timer">⏰ Oferta válida por 24 horas</p>
     </div>
@@ -233,33 +284,25 @@ serve(async (req) => {
 </body>
 </html>`;
 
-          clientEmailPromise = sendBrevoEmail(
-            BREVO_API_KEY,
-            clientEmail,
-            `Oi! Esqueceu a música de ${task.child_name}? 🎵 — 50% OFF por 24h`,
-            clientRecoveryHtml
-          ).catch((e) => console.error("Failed to send client recovery email:", e));
-        }
-
-        await Promise.all([adminEmailPromise, clientEmailPromise]);
+        clientEmailPromise = sendBrevoEmail(
+          BREVO_API_KEY,
+          clientEmail,
+          `Oi! Esqueceu a música de ${task.child_name}? 🎵 — 50% OFF por 24h`,
+          clientRecoveryHtml
+        ).catch((e: any) => console.error("Failed to send client recovery email:", e));
       }
 
-    } else {
-      // Update payment status regardless
-      await supabase
-        .from("music_tasks")
-        .update({ payment_status: status?.toLowerCase() || "unknown" })
-        .eq("id", task.id);
+      await Promise.all([adminEmailPromise, clientEmailPromise]);
     }
 
-    return new Response(JSON.stringify({ ok: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  } catch (e) {
-    console.error("Webhook error:", e);
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+  } else {
+    await supabase
+      .from("music_tasks")
+      .update({ payment_status: status || "unknown" })
+      .eq("id", task.id);
   }
-});
+
+  return new Response(JSON.stringify({ ok: true }), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
