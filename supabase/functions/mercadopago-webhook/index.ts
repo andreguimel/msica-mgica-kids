@@ -40,7 +40,7 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    console.log("MercadoPago webhook received:", JSON.stringify(body));
+    console.log("MercadoPago webhook received, action:", body.action || body.type, "payment_id:", body.data?.id);
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
