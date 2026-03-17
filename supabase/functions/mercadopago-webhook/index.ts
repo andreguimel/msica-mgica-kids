@@ -266,7 +266,7 @@ async function processPayment(
   <div class="container">
     <div class="card">
       <div style="font-size: 52px; margin-bottom: 16px;">🎵</div>
-      <h1>Oi! Esqueceu a música de ${task.child_name}? 🎶</h1>
+      <h1>Oi! Esqueceu a música de ${sanitizeHtml(task.child_name)}? 🎶</h1>
       <p class="subtitle">
         Você quase criou a música personalizada de <strong>${task.child_name}</strong>.<br>
         Por isso, estamos oferecendo um desconto especial só para você!
