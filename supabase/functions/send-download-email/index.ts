@@ -54,7 +54,7 @@ serve(async (req) => {
   <div class="container">
     <div class="card">
       <div style="font-size: 48px; margin-bottom: 16px;">🎵</div>
-      <h1>A música de ${childName} está pronta!</h1>
+      <h1>A música de ${sanitizeHtml(childName)} está pronta!</h1>
       <p class="subtitle">Sua música mágica personalizada foi gerada com sucesso.</p>
       
       ${accessCode ? `
