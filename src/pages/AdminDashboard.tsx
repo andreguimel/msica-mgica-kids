@@ -136,6 +136,8 @@ export default function AdminDashboard() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [pageSize, setPageSize] = useState<number>(30);
+  const [currentPage, setCurrentPage] = useState(1);
   const [newLinkCode, setNewLinkCode] = useState("");
   const [newLinkLabel, setNewLinkLabel] = useState("");
   const [newLinkPassword, setNewLinkPassword] = useState("");
@@ -196,6 +198,11 @@ export default function AdminDashboard() {
       const q = search.toLowerCase();
       return o.child_name.toLowerCase().includes(q) || (o.user_email?.toLowerCase().includes(q) ?? false) || (o.ref_code?.toLowerCase().includes(q) ?? false);
     });
+
+  const totalPages = pageSize === 0 ? 1 : Math.ceil(filteredOrders.length / pageSize);
+  const paginatedOrders = pageSize === 0 ? filteredOrders : filteredOrders.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  useEffect(() => { setCurrentPage(1); }, [search, statusFilter, period, pageSize]);
 
   const handleLogout = () => {
     sessionStorage.removeItem("admin_token");
@@ -470,6 +477,15 @@ export default function AdminDashboard() {
                     <SelectItem value="abandoned">Abandonados</SelectItem>
                   </SelectContent>
                 </Select>
+                <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+                  <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="30">30 por pág.</SelectItem>
+                    <SelectItem value="60">60 por pág.</SelectItem>
+                    <SelectItem value="90">90 por pág.</SelectItem>
+                    <SelectItem value="0">Mostrar tudo</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Button variant="outline" size="sm" onClick={() => exportCSV(filteredOrders)} disabled={filteredOrders.length === 0}>
                   <FileDown className="h-4 w-4 mr-1" /> CSV
                 </Button>
@@ -501,7 +517,7 @@ export default function AdminDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredOrders.map((o) => (
+                  {paginatedOrders.map((o) => (
                     <TableRow key={o.id} className="cursor-pointer">
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <Checkbox
@@ -539,6 +555,44 @@ export default function AdminDashboard() {
                   )}
                 </TableBody>
               </Table>
+              {/* Pagination controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4 px-2">
+                  <span className="text-sm text-muted-foreground">
+                    Mostrando {((currentPage - 1) * pageSize) + 1}–{Math.min(currentPage * pageSize, filteredOrders.length)} de {filteredOrders.length}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button variant="outline" size="sm" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>
+                      Anterior
+                    </Button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                      .reduce<(number | string)[]>((acc, p, i, arr) => {
+                        if (i > 0 && p - (arr[i - 1] as number) > 1) acc.push('...');
+                        acc.push(p);
+                        return acc;
+                      }, [])
+                      .map((p, i) =>
+                        typeof p === 'string' ? (
+                          <span key={`ellipsis-${i}`} className="px-2 text-muted-foreground">…</span>
+                        ) : (
+                          <Button
+                            key={p}
+                            variant={p === currentPage ? "default" : "outline"}
+                            size="sm"
+                            className="min-w-[36px]"
+                            onClick={() => setCurrentPage(p)}
+                          >
+                            {p}
+                          </Button>
+                        )
+                      )}
+                    <Button variant="outline" size="sm" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>
+                      Próximo
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
