@@ -56,6 +56,7 @@ export async function saveCustomLyrics(params: GenerateLyricsParams & { customLy
       theme: params.theme,
       lyrics: params.customLyrics,
       userEmail: params.userEmail,
+      userPhone: params.userPhone,
       musicStyle: params.musicStyle,
     }),
   });

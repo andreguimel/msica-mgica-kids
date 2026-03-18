@@ -122,6 +122,7 @@ REPETIÇÕES (muito importante!):
         status: "awaiting_payment",
         lyrics,
         user_email: userEmail || null,
+        user_phone: userPhone || null,
         music_style: musicStyle || null,
       })
       .select("id")

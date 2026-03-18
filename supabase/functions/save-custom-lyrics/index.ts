@@ -47,6 +47,7 @@ serve(async (req) => {
         status: "awaiting_payment",
         lyrics: lyrics.trim(),
         user_email: userEmail || null,
+        user_phone: userPhone || null,
         music_style: musicStyle || null,
       })
       .select("id")

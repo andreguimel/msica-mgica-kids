@@ -241,6 +241,46 @@ export default function CreateMusic() {
                   </p>
                 </div>
 
+                {/* Email do responsável */}
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-semibold mb-2">
+                    <Mail className="w-4 h-4 text-primary" />
+                    Email do responsável *
+                  </label>
+                  <Input
+                    type="email"
+                    placeholder="seuemail@exemplo.com"
+                    value={formData.userEmail || ""}
+                    onChange={(e) => setFormData({ ...formData, userEmail: e.target.value })}
+                    className="h-12 rounded-xl border-2 border-border focus:border-primary transition-colors"
+                    maxLength={255}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Para enviar a música pronta e novidades
+                  </p>
+                </div>
+
+                {/* WhatsApp */}
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-semibold mb-2">
+                    <Phone className="w-4 h-4 text-secondary" />
+                    WhatsApp (opcional)
+                  </label>
+                  <Input
+                    type="tel"
+                    placeholder="(11) 99999-9999"
+                    value={formData.userPhone || ""}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "").slice(0, 11);
+                      let masked = digits;
+                      if (digits.length > 2) masked = `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+                      if (digits.length > 7) masked = `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+                      setFormData({ ...formData, userPhone: masked });
+                    }}
+                    className="h-12 rounded-xl border-2 border-border focus:border-primary transition-colors"
+                  />
+                </div>
+
                 {/* Idade */}
                 <div>
                   <label className="flex items-center gap-2 text-sm font-semibold mb-2">
