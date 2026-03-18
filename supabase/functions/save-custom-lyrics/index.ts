@@ -23,7 +23,7 @@ serve(async (req) => {
   }
 
   try {
-    const { childName, ageGroup, theme, lyrics, userEmail, musicStyle } = await req.json();
+    const { childName, ageGroup, theme, lyrics, userEmail, userPhone, musicStyle } = await req.json();
 
     if (!childName || !ageGroup || !theme || !lyrics || lyrics.trim().length < 20) {
       return new Response(
