@@ -199,6 +199,11 @@ export default function AdminDashboard() {
       return o.child_name.toLowerCase().includes(q) || (o.user_email?.toLowerCase().includes(q) ?? false) || (o.ref_code?.toLowerCase().includes(q) ?? false);
     });
 
+  const totalPages = pageSize === 0 ? 1 : Math.ceil(filteredOrders.length / pageSize);
+  const paginatedOrders = pageSize === 0 ? filteredOrders : filteredOrders.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  useEffect(() => { setCurrentPage(1); }, [search, statusFilter, period, pageSize]);
+
   const handleLogout = () => {
     sessionStorage.removeItem("admin_token");
     navigate("/admin");
