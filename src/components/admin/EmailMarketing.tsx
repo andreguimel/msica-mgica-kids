@@ -272,8 +272,40 @@ export default function EmailMarketing({ orders }: { orders: Order[] }) {
           <p className="text-xs text-muted-foreground">
             Use <code>{"{nome}"}</code> para inserir o nome da criança automaticamente.
           </p>
+          <Button variant="outline" className="gap-2" onClick={() => setShowPreview(true)}>
+            <Eye className="h-4 w-4" /> Preview do Email
+          </Button>
         </CardContent>
       </Card>
+
+      {/* Preview Dialog */}
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Preview do Email</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="text-sm">
+              <span className="font-medium">Assunto: </span>
+              {subject.replace(/\{nome\}/g, "Maria")}
+            </div>
+            <div className="border rounded-md overflow-hidden">
+              <iframe
+                srcDoc={body.replace(/\{nome\}/g, "Maria")}
+                title="Email Preview"
+                className="w-full min-h-[400px] bg-white"
+                sandbox=""
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Preview usando o nome "Maria" como exemplo para {"{nome}"}.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPreview(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Contacts */}
       <Card>
