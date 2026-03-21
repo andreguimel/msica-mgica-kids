@@ -7,8 +7,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Send, Users, AlertCircle } from "lucide-react";
+import { Mail, Send, Users, Eye } from "lucide-react";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
@@ -80,7 +81,7 @@ export default function EmailMarketing({ orders }: { orders: Order[] }) {
   const [body, setBody] = useState(TEMPLATES[0].body);
   const [sending, setSending] = useState(false);
   const [lastResult, setLastResult] = useState<{ sent: number; failed: number } | null>(null);
-
+  const [showPreview, setShowPreview] = useState(false);
   const contacts = useMemo(() => {
     const map = new Map<string, Contact>();
     for (const o of orders) {
@@ -271,8 +272,40 @@ export default function EmailMarketing({ orders }: { orders: Order[] }) {
           <p className="text-xs text-muted-foreground">
             Use <code>{"{nome}"}</code> para inserir o nome da criança automaticamente.
           </p>
+          <Button variant="outline" className="gap-2" onClick={() => setShowPreview(true)}>
+            <Eye className="h-4 w-4" /> Preview do Email
+          </Button>
         </CardContent>
       </Card>
+
+      {/* Preview Dialog */}
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Preview do Email</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="text-sm">
+              <span className="font-medium">Assunto: </span>
+              {subject.replace(/\{nome\}/g, "Maria")}
+            </div>
+            <div className="border rounded-md overflow-hidden">
+              <iframe
+                srcDoc={body.replace(/\{nome\}/g, "Maria")}
+                title="Email Preview"
+                className="w-full min-h-[400px] bg-white"
+                sandbox=""
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Preview usando o nome "Maria" como exemplo para {"{nome}"}.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPreview(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Contacts */}
       <Card>
