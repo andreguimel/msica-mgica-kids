@@ -9,9 +9,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { RefreshCw, LogOut, ShoppingCart, CheckCircle, XCircle, TrendingUp, DollarSign, Search, FileDown, Play, Trash2, Link, Plus, Copy, Key } from "lucide-react";
+import { RefreshCw, LogOut, ShoppingCart, CheckCircle, XCircle, TrendingUp, DollarSign, Search, FileDown, Play, Trash2, Link, Plus, Copy, Key, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import OrderDetailModal from "@/components/admin/OrderDetailModal";
+import EmailMarketing from "@/components/admin/EmailMarketing";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -410,6 +411,9 @@ export default function AdminDashboard() {
           <TabsTrigger value="tracking">
             <Link className="h-4 w-4 mr-1" /> Links de Rastreamento
           </TabsTrigger>
+          <TabsTrigger value="email-marketing">
+            <Mail className="h-4 w-4 mr-1" /> Email Marketing
+          </TabsTrigger>
         </TabsList>
 
         {/* Funnel Tab */}
@@ -750,6 +754,9 @@ export default function AdminDashboard() {
               </Table>
             </CardContent>
           </Card>
+        </TabsContent>
+        <TabsContent value="email-marketing">
+          <EmailMarketing orders={orders} />
         </TabsContent>
       </Tabs>
 
