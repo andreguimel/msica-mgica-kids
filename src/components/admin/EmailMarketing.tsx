@@ -81,7 +81,7 @@ export default function EmailMarketing({ orders }: { orders: Order[] }) {
   const [body, setBody] = useState(TEMPLATES[0].body);
   const [sending, setSending] = useState(false);
   const [lastResult, setLastResult] = useState<{ sent: number; failed: number } | null>(null);
-
+  const [showPreview, setShowPreview] = useState(false);
   const contacts = useMemo(() => {
     const map = new Map<string, Contact>();
     for (const o of orders) {
